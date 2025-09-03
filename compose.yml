@@ -1,0 +1,33 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:15
+    container_name: skyle-db
+    environment:
+      POSTGRES_USER: ${DB_USER:-skyle_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-skyle_password}
+      POSTGRES_DB: ${DB_NAME:-skyle_db}
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+  # pgAdmin (データベース管理ツール - 開発時のみ)
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: skyle-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@skyle.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+    ports:
+      - "8080:80"
+    depends_on:
+      - db
+    restart: unless-stopped
+    profiles:
+      - dev
+
+volumes:
+  postgres_data:
