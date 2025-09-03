@@ -31,7 +31,7 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// 太陽時刻計算API（SunCalc使用）
+// 太陽時刻計算API（大阪の今日の時刻）
 app.get("/api/solar/today", (req, res) => {
   try {
     const latitude = 34.6937; // 大阪の緯度
@@ -46,10 +46,8 @@ app.get("/api/solar/today", (req, res) => {
       times: {
         sunrise: times.sunrise.toLocaleTimeString("ja-JP"),
         sunset: times.sunset.toLocaleTimeString("ja-JP"),
-        goldenHourStart: times.goldenHour.toLocaleTimeString("ja-JP"),
-        goldenHourEnd: times.goldenHourEnd.toLocaleTimeString("ja-JP"),
-        blueHourStart: times.dusk.toLocaleTimeString("ja-JP"),
-        blueHourEnd: times.night.toLocaleTimeString("ja-JP"),
+        goldenHour: times.goldenHour.toLocaleTimeString("ja-JP"),
+        blueHour: times.dusk.toLocaleTimeString("ja-JP"),
       },
     };
 
