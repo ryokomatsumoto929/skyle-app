@@ -1,35 +1,89 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from "react";
+import {
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Box,
+  Alert,
+} from "@mui/material";
+import "./App.css";
 
-function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+interface ApiResponse {
+  message: string;
+  timestamp: string;
 }
 
-export default App
+function App() {
+  const [apiResponse, setApiResponse] = useState<ApiResponse | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const testApi = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await fetch("http://localhost:3001/api/test");
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: ApiResponse = await response.json();
+      setApiResponse(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error occurred");
+      setApiResponse(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Box sx={{ padding: 4, maxWidth: 600, margin: "0 auto" }}>
+      <Typography variant="h3" component="h1" gutterBottom>
+        🌅 Skyle App
+      </Typography>
+
+      <Typography variant="h6" color="text.secondary" gutterBottom>
+        ブルーモーメントとマジックアワーをお知らせするアプリ
+      </Typography>
+
+      <Card sx={{ marginTop: 3 }}>
+        <CardContent>
+          <Typography variant="h5" gutterBottom>
+            API連携テスト
+          </Typography>
+
+          <Button
+            variant="contained"
+            onClick={testApi}
+            disabled={loading}
+            sx={{ marginBottom: 2 }}
+          >
+            {loading ? "テスト中..." : "バックエンドAPIテスト"}
+          </Button>
+
+          {error && (
+            <Alert severity="error" sx={{ marginBottom: 2 }}>
+              エラー: {error}
+            </Alert>
+          )}
+
+          {apiResponse && (
+            <Alert severity="success">
+              <Typography variant="body1">
+                <strong>レスポンス:</strong> {apiResponse.message}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                取得時刻:{" "}
+                {new Date(apiResponse.timestamp).toLocaleString("ja-JP")}
+              </Typography>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+    </Box>
+  );
+}
+
+export default App;
