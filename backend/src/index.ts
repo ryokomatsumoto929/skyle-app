@@ -31,7 +31,57 @@ app.get("/api/test", (req, res) => {
   });
 });
 
-// 太陽時刻計算API（SunCalc使用）
+// 太陽時刻計算API（位置情報対応版）
+app.get("/api/solar/times", (req, res) => {
+  try {
+    // クエリパラメータから緯度経度を取得（デフォルトは大阪）
+    const latitude = parseFloat(req.query.lat as string) || 34.6937;
+    const longitude = parseFloat(req.query.lng as string) || 135.5023;
+    const date = req.query.date
+      ? new Date(req.query.date as string)
+      : new Date();
+
+    // 緯度経度の妥当性チェック
+    if (latitude < -90 || latitude > 90) {
+      return res
+        .status(400)
+        .json({ error: "緯度は-90から90の範囲で指定してください" });
+    }
+    if (longitude < -180 || longitude > 180) {
+      return res
+        .status(400)
+        .json({ error: "経度は-180から180の範囲で指定してください" });
+    }
+
+    const times = SunCalc.getTimes(date, latitude, longitude);
+
+    const result = {
+      location: {
+        latitude: latitude,
+        longitude: longitude,
+      },
+      date: date.toISOString().split("T")[0],
+      times: {
+        sunrise: times.sunrise.toLocaleTimeString("ja-JP"),
+        sunset: times.sunset.toLocaleTimeString("ja-JP"),
+        goldenHour: times.goldenHour.toLocaleTimeString("ja-JP"),
+        blueHour: times.dusk.toLocaleTimeString("ja-JP"),
+        // 追加の太陽時刻
+        dawn: times.dawn.toLocaleTimeString("ja-JP"),
+        dusk: times.dusk.toLocaleTimeString("ja-JP"),
+        nauticalDawn: times.nauticalDawn.toLocaleTimeString("ja-JP"),
+        nauticalDusk: times.nauticalDusk.toLocaleTimeString("ja-JP"),
+      },
+    };
+
+    res.json(result);
+  } catch (error) {
+    console.error("Solar calculation error:", error);
+    res.status(500).json({ error: "太陽時刻の計算中にエラーが発生しました" });
+  }
+});
+
+// 太陽時刻計算API（大阪の今日の時刻）- 後方互換性のため残す
 app.get("/api/solar/today", (req, res) => {
   try {
     const latitude = 34.6937; // 大阪の緯度
@@ -46,10 +96,8 @@ app.get("/api/solar/today", (req, res) => {
       times: {
         sunrise: times.sunrise.toLocaleTimeString("ja-JP"),
         sunset: times.sunset.toLocaleTimeString("ja-JP"),
-        goldenHourStart: times.goldenHour.toLocaleTimeString("ja-JP"),
-        goldenHourEnd: times.goldenHourEnd.toLocaleTimeString("ja-JP"),
-        blueHourStart: times.dusk.toLocaleTimeString("ja-JP"),
-        blueHourEnd: times.night.toLocaleTimeString("ja-JP"),
+        goldenHour: times.goldenHour.toLocaleTimeString("ja-JP"),
+        blueHour: times.dusk.toLocaleTimeString("ja-JP"),
       },
     };
 

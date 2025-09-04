@@ -7,6 +7,7 @@ import {
   Box,
   Alert,
   Chip,
+  CircularProgress,
 } from "@mui/material";
 
 import "./App.css";
@@ -16,17 +17,31 @@ interface ApiResponse {
   timestamp: string;
 }
 
+interface Location {
+  latitude: number;
+  longitude: number;
+}
+
 interface SolarTimes {
-  location: string;
+  location: Location | string; // 新APIは Location型、旧APIは string型
   date: string;
   times: {
     sunrise: string;
     sunset: string;
-    goldenHourStart: string;
-    goldenHourEnd: string;
-    blueHourStart: string;
-    blueHourEnd: string;
+    goldenHour: string;
+    blueHour: string;
+    dawn: string;
+    dusk: string;
+    nauticalDawn: string;
+    nauticalDusk: string;
   };
+}
+
+interface LocationState {
+  coordinates: Location | null;
+  error: string | null;
+  loading: boolean;
+  permission: "granted" | "denied" | "prompt" | null;
 }
 
 function App() {
@@ -35,6 +50,14 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [solarLoading, setSolarLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 位置情報の状態管理
+  const [locationState, setLocationState] = useState<LocationState>({
+    coordinates: null,
+    error: null,
+    loading: false,
+    permission: null,
+  });
 
   const testApi = async () => {
     setLoading(true);
@@ -55,6 +78,93 @@ function App() {
     }
   };
 
+  // 現在地を取得する関数
+  const getCurrentLocation = () => {
+    setLocationState((prev) => ({ ...prev, loading: true, error: null }));
+
+    if (!navigator.geolocation) {
+      setLocationState((prev) => ({
+        ...prev,
+        loading: false,
+        error: "このブラウザは位置情報に対応していません",
+      }));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const coordinates: Location = {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        };
+
+        setLocationState({
+          coordinates,
+          error: null,
+          loading: false,
+          permission: "granted",
+        });
+
+        // 位置情報取得後、自動的に太陽時刻を取得
+        getSolarTimesWithLocation(coordinates);
+      },
+      (error) => {
+        let errorMessage = "位置情報の取得に失敗しました";
+
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "位置情報の使用が拒否されました";
+            setLocationState((prev) => ({ ...prev, permission: "denied" }));
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "位置情報が利用できません";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "位置情報の取得がタイムアウトしました";
+            break;
+        }
+
+        setLocationState((prev) => ({
+          ...prev,
+          loading: false,
+          error: errorMessage,
+        }));
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 300000, // 5分間キャッシュ
+      }
+    );
+  };
+
+  // 指定した位置の太陽時刻を取得
+  const getSolarTimesWithLocation = async (location?: Location) => {
+    setSolarLoading(true);
+    setError(null);
+
+    try {
+      let url = "http://localhost:3001/api/solar/times";
+
+      if (location) {
+        url += `?lat=${location.latitude}&lng=${location.longitude}`;
+      }
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data: SolarTimes = await response.json();
+      setSolarTimes(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Unknown error occurred");
+      setSolarTimes(null);
+    } finally {
+      setSolarLoading(false);
+    }
+  };
+
+  // 大阪（デフォルト）の太陽時刻を取得
   const getSolarTimes = async () => {
     setSolarLoading(true);
     setError(null);
@@ -72,6 +182,16 @@ function App() {
     } finally {
       setSolarLoading(false);
     }
+  };
+
+  // 位置情報の表示用フォーマット
+  const formatLocation = (location: Location | string) => {
+    if (typeof location === "string") {
+      return location;
+    }
+    return `緯度: ${location.latitude.toFixed(
+      4
+    )}, 経度: ${location.longitude.toFixed(4)}`;
   };
 
   return (
@@ -138,20 +258,51 @@ function App() {
                 今日の太陽時刻
               </Typography>
 
-              <Button
-                variant="contained"
-                color="secondary"
-                onClick={getSolarTimes}
-                disabled={solarLoading}
-                sx={{ marginBottom: 2 }}
-              >
-                {solarLoading ? "取得中..." : "太陽時刻を取得"}
-              </Button>
+              {/* 位置情報取得ボタン */}
+              <Box sx={{ display: "flex", gap: 1, marginBottom: 2 }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={getCurrentLocation}
+                  disabled={locationState.loading}
+                  sx={{ flex: 1 }}
+                >
+                  {locationState.loading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    "📍 現在地で取得"
+                  )}
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  onClick={getSolarTimes}
+                  disabled={solarLoading}
+                  sx={{ flex: 1 }}
+                >
+                  {solarLoading ? "取得中..." : "🏢 大阪で取得"}
+                </Button>
+              </Box>
+
+              {/* 位置情報のエラー表示 */}
+              {locationState.error && (
+                <Alert severity="warning" sx={{ marginBottom: 2 }}>
+                  {locationState.error}
+                </Alert>
+              )}
+
+              {/* 現在の位置情報表示 */}
+              {locationState.coordinates && (
+                <Alert severity="info" sx={{ marginBottom: 2 }}>
+                  📍 現在地: {formatLocation(locationState.coordinates)}
+                </Alert>
+              )}
 
               {solarTimes && (
                 <Box>
                   <Typography variant="h6" gutterBottom>
-                    📍 {solarTimes.location} ({solarTimes.date})
+                    📍 {formatLocation(solarTimes.location)} ({solarTimes.date})
                   </Typography>
 
                   <Box
@@ -170,15 +321,29 @@ function App() {
                       />
                     </Box>
                     <Chip
-                      label={`✨ マジックアワー: ${solarTimes.times.goldenHourStart}`}
+                      label={`✨ ゴールデンアワー: ${solarTimes.times.goldenHour}`}
                       color="warning"
                       sx={{ width: "100%" }}
                     />
                     <Chip
-                      label={`🔵 ブルーモーメント: ${solarTimes.times.blueHourStart} - ${solarTimes.times.blueHourEnd}`}
+                      label={`🔵 ブルーアワー: ${solarTimes.times.blueHour}`}
                       color="primary"
                       sx={{ width: "100%" }}
                     />
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Chip
+                        label={`🌄 夜明け: ${solarTimes.times.dawn}`}
+                        variant="outlined"
+                        size="small"
+                        sx={{ flex: 1 }}
+                      />
+                      <Chip
+                        label={`🌆 夕暮れ: ${solarTimes.times.dusk}`}
+                        variant="outlined"
+                        size="small"
+                        sx={{ flex: 1 }}
+                      />
+                    </Box>
                   </Box>
                 </Box>
               )}
