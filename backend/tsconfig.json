@@ -4,14 +4,16 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "outDir": "./dist",
-    "rootDir": "./src",
+    "rootDir": "./",
     "strict": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true
   },
-  "include": ["src/**/*"],
+  "include": ["**/*.ts", "**/*.js"],
   "exclude": ["node_modules", "dist"]
 }

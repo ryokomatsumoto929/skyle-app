@@ -50,15 +50,30 @@ async function testWeatherAPI() {
     console.log("- 視程:", data.visibility + "m ✅");
     console.log("");
     console.log("🚀 Skyleアプリでの予報機能実装準備完了！");
-  } catch (error) {
-    if (error.response?.status === 401) {
-      console.error("❌ APIキーが無効です");
-      console.log("💡 正しいAPIキーを.envファイルに設定してください");
-    } else if (error.response?.status === 429) {
-      console.error("❌ API使用制限に達しました");
-      console.log("💡 しばらく待ってから再試行してください");
-    } else {
+  } catch (error: unknown) {
+    // Axiosエラーかどうかを安全にチェック
+    if (error && typeof error === "object" && "response" in error) {
+      const axiosError = error as {
+        response?: { status?: number };
+        message?: string;
+      };
+
+      if (axiosError.response?.status === 401) {
+        console.error("❌ APIキーが無効です");
+        console.log("💡 正しいAPIキーを.envファイルに設定してください");
+      } else if (axiosError.response?.status === 429) {
+        console.error("❌ API使用制限に達しました");
+        console.log("💡 しばらく待ってから再試行してください");
+      } else {
+        console.error(
+          "❌ エラーが発生しました:",
+          axiosError.message || "不明なエラー"
+        );
+      }
+    } else if (error instanceof Error) {
       console.error("❌ エラーが発生しました:", error.message);
+    } else {
+      console.error("❌ 予期しないエラーが発生しました");
     }
   }
 }

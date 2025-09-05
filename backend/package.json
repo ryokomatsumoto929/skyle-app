@@ -4,16 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon src/index.ts",
+    "dev": "ts-node --esm server.ts",
     "build": "tsc",
-    "start": "node dist/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node dist/server.js",
+    "test:api": "ts-node --esm test-weather-api.ts",
+    "test:service": "ts-node --esm --experimentalSpecifierResolution=node test-weather-service.ts",
+    "test:suncalc": "ts-node --esm test-suncalc.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^4.21.2",
@@ -21,8 +24,9 @@
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
+    "@types/dotenv": "^6.1.1",
     "@types/express": "^4.17.23",
-    "@types/node": "^24.3.0",
+    "@types/node": "^24.3.1",
     "@types/suncalc": "^1.9.2",
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
