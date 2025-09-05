@@ -44,4 +44,5 @@ pids
 
 # Temporary files
 tmp/
-temp/
+temp/.env
+.env.*
