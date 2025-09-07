@@ -14,10 +14,16 @@ app = FastAPI(
     version="2.0.0"  # バージョンアップ！
 )
 
-# CORS設定
+# CORS設定（開発環境用 - 包括的許可）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=[
+        "http://localhost:5173",  # 通常のViteポート
+        "http://localhost:5174",  # 今回のViteポート
+        "http://localhost:3000",  # 予備ポート
+        "http://127.0.0.1:5173",  # 127.0.0.1版
+        "http://127.0.0.1:5174",  # 127.0.0.1版
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
