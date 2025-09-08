@@ -1,0 +1,248 @@
+/* SimpleMomentCard.css */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  min-height: 100vh;
+  color: #495057;
+}
+
+.moment-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 60px 30px;
+  text-align: center;
+  min-height: 100vh;
+}
+
+.app-title {
+  font-size: 18px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  margin-bottom: 40px;
+  opacity: 0.7;
+}
+
+.city-selector {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 30px;
+}
+
+.city-button {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 8px 16px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 300;
+}
+
+.city-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  transform: translateY(-1px);
+}
+
+.city-button.active {
+  background: rgba(255, 255, 255, 1);
+  font-weight: 400;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.location {
+  font-size: 12px;
+  opacity: 0.5;
+  margin-bottom: 40px;
+}
+
+.main-content {
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 30px;
+  padding: 50px 30px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  margin-bottom: 40px;
+}
+
+.moment-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 20px auto;
+  border-radius: 50%;
+  background-size: cover;
+  background-position: center;
+  opacity: 0.9;
+  background-repeat: no-repeat;
+}
+
+.morning-icon {
+  background-image: url("/images/morning-icon.png");
+}
+
+.evening-icon {
+  background-image: url("/images/evening-icon.png");
+}
+
+.night-icon {
+  background-image: url("/images/night-icon.png");
+}
+
+.moment-title {
+  font-size: 16px;
+  font-weight: 300;
+  margin-bottom: 15px;
+  opacity: 0.8;
+}
+
+.moment-time {
+  font-size: 32px;
+  font-weight: 200;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+}
+
+.moment-description {
+  font-size: 14px;
+  font-weight: 300;
+  opacity: 0.7;
+  line-height: 1.6;
+}
+
+/* 品質レベル別のスタイル - 優しい色味 */
+.excellent {
+  background: rgba(255, 248, 240, 0.95);
+  border: 1px solid rgba(255, 193, 171, 0.3);
+  box-shadow: 0 8px 25px rgba(255, 193, 171, 0.15);
+}
+
+.good {
+  background: rgba(248, 250, 229, 0.95);
+  border: 1px solid rgba(212, 225, 150, 0.3);
+  box-shadow: 0 8px 25px rgba(212, 225, 150, 0.15);
+}
+
+.fair {
+  background: rgba(240, 248, 255, 0.95);
+  border: 1px solid rgba(173, 216, 255, 0.3);
+  box-shadow: 0 8px 25px rgba(173, 216, 255, 0.15);
+}
+
+.poor {
+  background: rgba(248, 249, 250, 0.95);
+  border: 1px solid rgba(222, 226, 230, 0.3);
+  box-shadow: 0 8px 25px rgba(222, 226, 230, 0.1);
+}
+
+/* 品質によるアイコンフィルター効果 */
+.excellent .moment-icon {
+  filter: brightness(1.1) saturate(1.2);
+  box-shadow: 0 0 20px rgba(255, 193, 171, 0.4);
+}
+
+.good .moment-icon {
+  filter: brightness(1.05) saturate(1.1);
+  box-shadow: 0 0 15px rgba(212, 225, 150, 0.3);
+}
+
+.fair .moment-icon {
+  filter: brightness(1) saturate(1);
+  box-shadow: 0 0 10px rgba(173, 216, 255, 0.2);
+}
+
+.poor .moment-icon {
+  filter: brightness(0.9) saturate(0.8);
+  box-shadow: 0 0 5px rgba(222, 226, 230, 0.2);
+}
+
+.notification-toggle {
+  background: rgba(255, 255, 255, 0.8);
+  border: none;
+  border-radius: 25px;
+  padding: 15px 30px;
+  font-size: 14px;
+  font-weight: 300;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.notification-toggle:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+.next-moment {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  padding: 20px;
+  margin-top: 20px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+/* 夕方バージョン */
+.evening {
+  background: linear-gradient(135deg, #f1f3f4 0%, #e8eaf6 100%);
+}
+
+.evening .main-content {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+/* ローディング・エラー状態 */
+.loading-container,
+.error-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  text-align: center;
+}
+
+.loading-text,
+.error-text {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.retry-button {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 20px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.retry-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-2px);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 480px) {
+  .moment-container {
+    padding: 40px 20px;
+  }
+
+  .main-content {
+    padding: 40px 20px;
+  }
+
+  .moment-time {
+    font-size: 28px;
+  }
+
+  .city-selector {
+    flex-wrap: wrap;
+  }
+}

@@ -1,59 +1,36 @@
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import WeatherIntegrationTest from './WeatherIntegrationTest';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#ff9800',
-    },
-    background: {
-      default: '#f5f5f5',
-    },
-  },
-  typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
-    h1: {
-      fontWeight: 700,
-    },
-    h2: {
-      fontWeight: 600,
-    },
-    h3: {
-      fontWeight: 600,
-    },
-  },
-  components: {
-    MuiCard: {
-      styleOverrides: {
-        root: {
-          borderRadius: 16,
-          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          borderRadius: 12,
-          textTransform: 'none',
-          fontWeight: 600,
-        },
-      },
-    },
-  },
-});
+// App.tsx - 既存UIと新UIの切り替え
+import React, { useState } from "react";
+import WeatherIntegrationTest from "./components/WeatherIntegrationTest";
+import SimpleMomentCard from "./components/SimpleMomentCard";
 
 function App() {
+  // UI切り替えフラグ（開発用）
+  const [useSimpleUI, setUseSimpleUI] = useState(true);
+
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <WeatherIntegrationTest />
-    </ThemeProvider>
+    <div className="App">
+      {/* 開発用の切り替えボタン */}
+      <div
+        style={{
+          position: "fixed",
+          top: 10,
+          right: 10,
+          zIndex: 1000,
+          background: "rgba(255, 255, 255, 0.9)",
+          padding: "8px 12px",
+          borderRadius: "20px",
+          fontSize: "12px",
+          border: "1px solid rgba(0, 0, 0, 0.1)",
+          cursor: "pointer",
+        }}
+        onClick={() => setUseSimpleUI(!useSimpleUI)}
+      >
+        {useSimpleUI ? "従来UI" : "シンプルUI"}
+      </div>
+
+      {/* UI切り替え */}
+      {useSimpleUI ? <SimpleMomentCard /> : <WeatherIntegrationTest />}
+    </div>
   );
 }
 
