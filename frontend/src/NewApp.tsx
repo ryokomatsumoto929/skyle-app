@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Card,
@@ -8,12 +8,19 @@ import {
   Menu,
   MenuItem,
   Container,
-  Stack,
+  CircularProgress,
+  Button,
   Paper,
 } from "@mui/material";
-import { Menu as MenuIcon, Close, Camera, Info } from "@mui/icons-material";
+import {
+  Menu as MenuIcon,
+  Close,
+  Camera,
+  Info,
+  LocationOn,
+} from "@mui/icons-material";
 
-console.log("=== NEW MUI DESIGN LOADED ===");
+console.log("=== NEW MUI DESIGN WITH API LOADED ===");
 
 // 型定義
 interface IconProps {
@@ -22,18 +29,28 @@ interface IconProps {
   size?: number;
 }
 
-interface TimeData {
+interface NextMoment {
+  type: "magic" | "blue";
   time: string;
+  timeRange: string;
+  period: "morning" | "evening";
   visibility: "excellent" | "good" | "fair" | "poor";
   message: string;
+  isHappening: boolean;
 }
 
-interface TodayData {
-  magicHour: TimeData;
-  blueMoment: TimeData;
+interface SolarData {
+  golden_hour_morning_start: string;
+  golden_hour_morning_end: string;
+  golden_hour_evening_start: string;
+  golden_hour_evening_end: string;
+  blue_hour_morning_start: string;
+  blue_hour_morning_end: string;
+  blue_hour_evening_start: string;
+  blue_hour_evening_end: string;
 }
 
-// アイコンコンポーネント（画像版）
+// アイコンコンポーネント
 const ImageIcon: React.FC<IconProps> = ({ type, visibility, size = 80 }) => {
   const getImageSrc = () => {
     if (type === "magic") {
@@ -69,20 +86,183 @@ const ImageIcon: React.FC<IconProps> = ({ type, visibility, size = 80 }) => {
 const NewSkyleApp = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentPage, setCurrentPage] = useState("home");
+  const [nextMoment, setNextMoment] = useState<NextMoment | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+
   const open = Boolean(anchorEl);
 
-  const todayData: TodayData = {
-    magicHour: {
-      time: "17:15",
-      visibility: "excellent",
-      message: "美しい夕暮れが期待できそうです",
-    },
-    blueMoment: {
-      time: "18:30",
-      visibility: "good",
-      message: "静寂な青い時間をお楽しみください",
-    },
+  // 時刻文字列をDateオブジェクトに変換
+  const parseTimeToday = (timeStr: string): Date => {
+    const [hours, minutes] = timeStr.split(":").map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
   };
+
+  // 次の美しい時間を判定
+  const findNextMoment = (data: SolarData): NextMoment => {
+    const now = new Date();
+
+    const moments = [
+      {
+        type: "blue" as const,
+        period: "morning" as const,
+        start: parseTimeToday(data.blue_hour_morning_start),
+        end: parseTimeToday(data.blue_hour_morning_end),
+        timeRange: `${data.blue_hour_morning_start} - ${data.blue_hour_morning_end}`,
+        message: "静寂な青い時間が訪れます",
+      },
+      {
+        type: "magic" as const,
+        period: "morning" as const,
+        start: parseTimeToday(data.golden_hour_morning_start),
+        end: parseTimeToday(data.golden_hour_morning_end),
+        timeRange: `${data.golden_hour_morning_start} - ${data.golden_hour_morning_end}`,
+        message: "黄金色の朝が始まります",
+      },
+      {
+        type: "magic" as const,
+        period: "evening" as const,
+        start: parseTimeToday(data.golden_hour_evening_start),
+        end: parseTimeToday(data.golden_hour_evening_end),
+        timeRange: `${data.golden_hour_evening_start} - ${data.golden_hour_evening_end}`,
+        message: "美しい夕暮れが期待できそうです",
+      },
+      {
+        type: "blue" as const,
+        period: "evening" as const,
+        start: parseTimeToday(data.blue_hour_evening_start),
+        end: parseTimeToday(data.blue_hour_evening_end),
+        timeRange: `${data.blue_hour_evening_start} - ${data.blue_hour_evening_end}`,
+        message: "静寂な青い時間をお楽しみください",
+      },
+    ];
+
+    // 現在進行中かチェック
+    for (const moment of moments) {
+      if (now >= moment.start && now <= moment.end) {
+        return {
+          type: moment.type,
+          time: moment.start.toLocaleTimeString("ja-JP", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          timeRange: moment.timeRange,
+          period: moment.period,
+          visibility: "excellent",
+          message: "今です！空を見上げてみてください",
+          isHappening: true,
+        };
+      }
+    }
+
+    // 次の時間を探す
+    for (const moment of moments) {
+      if (now < moment.start) {
+        const minutesUntil = Math.floor(
+          (moment.start.getTime() - now.getTime()) / 60000
+        );
+        const hoursUntil = Math.floor(minutesUntil / 60);
+        const minsUntil = minutesUntil % 60;
+
+        let timeMessage = "";
+        if (hoursUntil > 0) {
+          timeMessage = `あと${hoursUntil}時間${minsUntil}分`;
+        } else if (minutesUntil > 0) {
+          timeMessage = `あと${minutesUntil}分`;
+        } else {
+          timeMessage = "まもなく";
+        }
+
+        return {
+          type: moment.type,
+          time: moment.start.toLocaleTimeString("ja-JP", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          timeRange: moment.timeRange,
+          period: moment.period,
+          visibility: "excellent",
+          message: `${timeMessage} ${moment.message}`,
+          isHappening: false,
+        };
+      }
+    }
+
+    // 明日の朝
+    return {
+      type: "blue",
+      time: moments[0].start.toLocaleTimeString("ja-JP", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      timeRange: moments[0].timeRange,
+      period: "morning",
+      visibility: "excellent",
+      message: "明日の朝、静寂な青い時間が訪れます",
+      isHappening: false,
+    };
+  };
+
+  // 位置情報取得
+  const getLocation = () => {
+    setLoading(true);
+    setError(null);
+
+    if (!navigator.geolocation) {
+      setError("位置情報がサポートされていません");
+      setLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocation({ lat: latitude, lng: longitude });
+        fetchSolarData(latitude, longitude);
+      },
+      (error) => {
+        console.error("位置情報取得エラー:", error);
+        setError("位置情報の取得に失敗しました");
+        setLoading(false);
+        fetchSolarData(34.6937, 135.5023);
+      }
+    );
+  };
+
+  // APIからデータ取得
+  const fetchSolarData = async (lat: number, lng: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3001/api/solar/times?lat=${lat}&lng=${lng}`
+      );
+
+      if (!response.ok) {
+        throw new Error("データの取得に失敗しました");
+      }
+
+      const data: SolarData = await response.json();
+      console.log("取得したデータ:", data);
+
+      const next = findNextMoment(data);
+      console.log("次の美しい時間:", next);
+
+      setNextMoment(next);
+      setLoading(false);
+    } catch (err) {
+      console.error("API呼び出しエラー:", err);
+      setError("データの取得に失敗しました");
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSolarData(34.6937, 135.5023);
+  }, []);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget);
@@ -105,7 +285,6 @@ const NewSkyleApp = () => {
         py: 3,
       }}
     >
-      {/* ヘッダー */}
       <Paper
         elevation={0}
         sx={{
@@ -164,7 +343,6 @@ const NewSkyleApp = () => {
         </Container>
       </Paper>
 
-      {/* メインコンテンツ */}
       <Container maxWidth="xs">
         <Box
           sx={{
@@ -176,107 +354,138 @@ const NewSkyleApp = () => {
           }}
         >
           {currentPage === "home" && (
-            <Stack spacing={8} sx={{ width: "100%" }}>
-              {/* マジックアワー */}
-              <Box sx={{ textAlign: "center" }}>
-                <ImageIcon
-                  type="magic"
-                  visibility={todayData.magicHour.visibility}
-                  size={120}
-                />
-                <Card
-                  elevation={8}
+            <>
+              <Box sx={{ mb: 4, textAlign: "center" }}>
+                <Button
+                  variant="contained"
+                  startIcon={<LocationOn />}
+                  onClick={getLocation}
+                  disabled={loading}
                   sx={{
-                    borderRadius: 4,
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                    backgroundColor: "rgba(59, 130, 246, 0.9)",
                     backdropFilter: "blur(10px)",
+                    borderRadius: 3,
+                    px: 3,
+                    py: 1.5,
+                    "&:hover": {
+                      backgroundColor: "rgba(37, 99, 235, 0.9)",
+                    },
                   }}
                 >
-                  <CardContent sx={{ p: 4 }}>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 500,
-                        color: "#1e293b",
-                        mb: 3,
-                      }}
-                    >
-                      今夕のマジックアワー
-                    </Typography>
-                    <Typography
-                      variant="h2"
-                      sx={{
-                        fontWeight: 100,
-                        color: "#0f172a",
-                        mb: 2,
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {todayData.magicHour.time}
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: "#475569",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {todayData.magicHour.message}
-                    </Typography>
-                  </CardContent>
-                </Card>
+                  現在地の空を見る
+                </Button>
+                {location && (
+                  <Typography
+                    variant="caption"
+                    sx={{ display: "block", mt: 1, color: "#64748b" }}
+                  >
+                    📍 緯度: {location.lat.toFixed(4)}, 経度:{" "}
+                    {location.lng.toFixed(4)}
+                  </Typography>
+                )}
               </Box>
 
-              {/* ブルーモーメント */}
-              <Box sx={{ textAlign: "center" }}>
-                <ImageIcon
-                  type="blue"
-                  visibility={todayData.blueMoment.visibility}
-                  size={100}
-                />
+              {loading && (
+                <Box sx={{ textAlign: "center", py: 8 }}>
+                  <CircularProgress />
+                  <Typography sx={{ mt: 2, color: "#64748b" }}>
+                    データを取得中...
+                  </Typography>
+                </Box>
+              )}
+
+              {error && (
                 <Card
-                  elevation={6}
                   sx={{
-                    borderRadius: 4,
-                    backgroundColor: "rgba(255, 255, 255, 0.9)",
-                    backdropFilter: "blur(10px)",
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                    borderRadius: 3,
+                    mb: 4,
                   }}
                 >
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography
-                      variant="h6"
-                      sx={{
-                        fontWeight: 500,
-                        color: "#1e293b",
-                        mb: 2,
-                      }}
-                    >
-                      ブルーモーメント
-                    </Typography>
-                    <Typography
-                      variant="h3"
-                      sx={{
-                        fontWeight: 100,
-                        color: "#0f172a",
-                        mb: 2,
-                        letterSpacing: "-0.02em",
-                      }}
-                    >
-                      {todayData.blueMoment.time}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "#475569",
-                        lineHeight: 1.6,
-                      }}
-                    >
-                      {todayData.blueMoment.message}
-                    </Typography>
+                  <CardContent>
+                    <Typography color="error">{error}</Typography>
                   </CardContent>
                 </Card>
-              </Box>
-            </Stack>
+              )}
+
+              {!loading && nextMoment && (
+                <Box sx={{ textAlign: "center", width: "100%" }}>
+                  <ImageIcon
+                    type={nextMoment.type}
+                    visibility={nextMoment.visibility}
+                    size={140}
+                  />
+
+                  <Card
+                    elevation={8}
+                    sx={{
+                      borderRadius: 4,
+                      backgroundColor: "rgba(255, 255, 255, 0.9)",
+                      backdropFilter: "blur(10px)",
+                      maxWidth: 400,
+                      mx: "auto",
+                    }}
+                  >
+                    <CardContent sx={{ p: 5 }}>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 500,
+                          color: "#1e293b",
+                          mb: 1,
+                        }}
+                      >
+                        {nextMoment.isHappening ? "今です！" : "次の美しい時間"}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#64748b",
+                          mb: 3,
+                        }}
+                      >
+                        {nextMoment.type === "magic"
+                          ? "マジックアワー"
+                          : "ブルーモーメント"}
+                      </Typography>
+
+                      <Typography
+                        variant="h1"
+                        sx={{
+                          fontWeight: 100,
+                          color: "#0f172a",
+                          mb: 2,
+                          letterSpacing: "-0.02em",
+                        }}
+                      >
+                        {nextMoment.time}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "#94a3b8",
+                          mb: 3,
+                        }}
+                      >
+                        {nextMoment.timeRange}
+                      </Typography>
+
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          color: "#475569",
+                          lineHeight: 1.8,
+                        }}
+                      >
+                        {nextMoment.message}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Box>
+              )}
+            </>
           )}
 
           {currentPage === "about" && (
@@ -325,18 +534,19 @@ const NewSkyleApp = () => {
         </Box>
       </Container>
 
-      {/* メニュー */}
       <Menu
         anchorEl={anchorEl}
         open={open}
         onClose={handleClose}
-        PaperProps={{
-          elevation: 8,
-          sx: {
-            borderRadius: 3,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            backdropFilter: "blur(10px)",
-            minWidth: 200,
+        slotProps={{
+          paper: {
+            elevation: 8,
+            sx: {
+              borderRadius: 3,
+              backgroundColor: "rgba(255, 255, 255, 0.95)",
+              backdropFilter: "blur(10px)",
+              minWidth: 200,
+            },
           },
         }}
       >

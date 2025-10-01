@@ -59,14 +59,14 @@ def get_solar_times(lat: float = 35.6762, lng: float = 139.6503):
 
 @app.get("/api/today-forecast")
 def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
-    """太陽時刻 + 実際の天気データ統合 (メイン機能)"""
+    """ハンバーガーメニュー用の統合エンドポイント"""
     try:
         # APIキー取得
         api_key = os.getenv("OPENWEATHER_API_KEY")
         
         if not api_key:
             # APIキーがない場合はテストデータ
-            return get_test_forecast(lat, lng)
+            return get_test_forecast_for_menu(lat, lng)
         
         # OpenWeatherMap API呼び出し
         weather_url = "https://api.openweathermap.org/data/2.5/weather"
@@ -82,54 +82,98 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
         
         if response.status_code != 200:
             print(f"❌ Weather API Error: {response.status_code}")
-            return get_test_forecast(lat, lng)
+            return get_test_forecast_for_menu(lat, lng)
         
         weather_data = response.json()
         
-        # 実際の天気データを抽出
-        real_weather = {
-            "temperature": weather_data["main"]["temp"],
+        # 実際の天気データを抽出（ハンバーガーメニュー形式）
+        weather = {
+            "description": weather_data["weather"][0]["description"],
+            "clouds": weather_data["clouds"]["all"],
             "humidity": weather_data["main"]["humidity"],
-            "cloud_cover": weather_data["clouds"]["all"],
-            "wind_speed": weather_data["wind"]["speed"],
-            "visibility": weather_data.get("visibility", 10000),
-            "weather_main": weather_data["weather"][0]["main"],
-            "weather_description": weather_data["weather"][0]["description"],
-            "pressure": weather_data["main"]["pressure"]
+            "temperature": weather_data["main"]["temp"],
+            "visibility": get_visibility_message(weather_data)
         }
         
-        # 可視性スコア計算
-        visibility_score = calculate_visibility_score(real_weather)
-        
-        # 太陽時刻
+        # 太陽時刻（ハンバーガーメニュー形式）
         solar_times = {
-            "sunrise": "06:00",
-            "sunset": "18:00",
-            "solar_noon": "12:00",
-            "golden_hour_evening_start": "18:00",
-            "golden_hour_evening_end": "18:30"
+            "sunrise": "2025-09-09T06:00:00+09:00",
+            "sunset": "2025-09-09T18:00:00+09:00",
+            "goldenHour": "2025-09-09T05:30:00+09:00",
+            "blueHour": "2025-09-09T18:30:00+09:00"
         }
         
         return {
-            "solar_times": solar_times,
-            "weather": real_weather,
-            "visibility": visibility_score,
+            "weather": weather,
+            "solarTimes": solar_times,
             "location": {"lat": lat, "lng": lng},
-            "timestamp": datetime.now().isoformat(),
-            "data_source": "OpenWeatherMap API",
-            "city": weather_data.get("name", "Unknown")
+            "timestamp": datetime.now().isoformat()
         }
         
     except requests.RequestException as e:
         print(f"🌐 ネットワークエラー: {str(e)}")
-        return get_test_forecast(lat, lng)
+        return get_test_forecast_for_menu(lat, lng)
     except Exception as e:
         print(f"💥 エラー: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+def get_test_forecast_for_menu(lat: float = 35.6762, lng: float = 139.6503):
+    """ハンバーガーメニュー用テストデータ"""
+    weather = {
+        "description": "薄い雲",
+        "clouds": 45,
+        "humidity": 65,
+        "temperature": 23.5,
+        "visibility": "👌 美しい夕焼けが期待できそうです（テストデータ）"
+    }
+    
+    solar_times = {
+        "sunrise": "2025-09-09T06:00:00+09:00",
+        "sunset": "2025-09-09T18:00:00+09:00",
+        "goldenHour": "2025-09-09T05:30:00+09:00",
+        "blueHour": "2025-09-09T18:30:00+09:00"
+    }
+    
+    return {
+        "weather": weather,
+        "solarTimes": solar_times,
+        "location": {"lat": lat, "lng": lng},
+        "timestamp": datetime.now().isoformat()
+    }
+
+def get_visibility_message(weather_data):
+    """天気データから可視性メッセージを生成"""
+    cloud_cover = weather_data["clouds"]["all"]
+    humidity = weather_data["main"]["humidity"]
+    
+    score = 0
+    
+    # 雲量スコア
+    if 30 <= cloud_cover <= 70:
+        score += 40
+    elif 20 <= cloud_cover <= 80:
+        score += 25
+    else:
+        score += 10
+    
+    # 湿度スコア
+    if 40 <= humidity <= 70:
+        score += 25
+    else:
+        score += 10
+    
+    # メッセージ生成
+    if score >= 50:
+        return "✨ 絶好の撮影日和です！"
+    elif score >= 30:
+        return "👌 期待できそうです"
+    else:
+        return "🤔 微妙かも..."
+
+# 既存のエンドポイントも保持
 @app.get("/api/test-forecast")
 def get_test_forecast(lat: float = 35.6762, lng: float = 139.6503):
-    """テストデータ版（フォールバック用）"""
+    """詳細テストデータ版（既存機能との互換性用）"""
     solar_times = {
         "sunrise": "06:00",
         "sunset": "18:00",
@@ -165,7 +209,7 @@ def get_test_forecast(lat: float = 35.6762, lng: float = 139.6503):
     }
 
 def calculate_visibility_score(weather):
-    """実際の天気データから可視性を判定"""
+    """実際の天気データから可視性を判定（既存機能）"""
     score = 0
     factors = {}
     
@@ -237,6 +281,34 @@ def calculate_visibility_score(weather):
         "factors": factors
     }
 
+# ハンバーガーメニュー用の新機能エンドポイント
+@app.get("/api/halo-forecast")
+async def get_halo_forecast(lat: float, lng: float):
+    """ハロ予報（機械学習実装予定）"""
+    return {
+        "probability": 0.3,
+        "conditions": "氷晶の形成条件を確認中...",
+        "message": "機械学習モデル開発中"
+    }
+
+@app.get("/api/rainbow-forecast") 
+async def get_rainbow_forecast(lat: float, lng: float):
+    """虹予報（機械学習実装予定）"""
+    return {
+        "probability": 0.5,
+        "conditions": "雨と太陽の位置関係を分析中...",
+        "message": "機械学習モデル開発中"
+    }
+
+@app.get("/api/health")
+async def health_check():
+    """ハンバーガーメニューの接続ステータス確認用"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "message": "Skyle API is running"
+    }
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=3001)
+    uvicorn.run(app, host="0.0.0.0", port=8000)  # ポートを8000に変更
