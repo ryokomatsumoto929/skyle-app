@@ -20,26 +20,19 @@ import {
   LocationOn,
 } from "@mui/icons-material";
 
-console.log("=== NEW MUI DESIGN WITH API LOADED ===");
-
-// 型定義
-interface IconProps {
-  type: "magic" | "blue";
-  visibility: "excellent" | "good" | "fair" | "poor";
-  size?: number;
-}
-
 interface NextMoment {
   type: "magic" | "blue";
   time: string;
   timeRange: string;
   period: "morning" | "evening";
-  visibility: "excellent" | "good" | "fair" | "poor";
   message: string;
   isHappening: boolean;
+  visibility: "excellent" | "good" | "fair" | "poor";
 }
 
 interface SolarData {
+  sunrise: string;
+  sunset: string;
   golden_hour_morning_start: string;
   golden_hour_morning_end: string;
   golden_hour_evening_start: string;
@@ -50,8 +43,11 @@ interface SolarData {
   blue_hour_evening_end: string;
 }
 
-// アイコンコンポーネント
-const ImageIcon: React.FC<IconProps> = ({ type, visibility, size = 80 }) => {
+const MomentIcon: React.FC<{
+  type: "magic" | "blue";
+  visibility: "excellent" | "good" | "fair" | "poor";
+  size?: number;
+}> = ({ type, visibility, size = 140 }) => {
   const getImageSrc = () => {
     if (type === "magic") {
       return `/images/magic-hour-${visibility}.jpg`;
@@ -71,6 +67,7 @@ const ImageIcon: React.FC<IconProps> = ({ type, visibility, size = 80 }) => {
           height: size,
           borderRadius: 3,
           boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+          objectFit: "cover",
         }}
         onError={(e) => {
           e.currentTarget.src = `/images/${
@@ -82,8 +79,7 @@ const ImageIcon: React.FC<IconProps> = ({ type, visibility, size = 80 }) => {
   );
 };
 
-// メインアプリ
-const NewSkyleApp = () => {
+const SkyleApp = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentPage, setCurrentPage] = useState("home");
   const [nextMoment, setNextMoment] = useState<NextMoment | null>(null);
@@ -95,15 +91,17 @@ const NewSkyleApp = () => {
 
   const open = Boolean(anchorEl);
 
-  // 時刻文字列をDateオブジェクトに変換
-  const parseTimeToday = (timeStr: string): Date => {
-    const [hours, minutes] = timeStr.split(":").map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, 0, 0);
-    return date;
+  const parseISOTime = (isoStr: string): Date => {
+    return new Date(isoStr);
   };
 
-  // 次の美しい時間を判定
+  const formatTime = (date: Date): string => {
+    return date.toLocaleTimeString("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const findNextMoment = (data: SolarData): NextMoment => {
     const now = new Date();
 
@@ -111,56 +109,47 @@ const NewSkyleApp = () => {
       {
         type: "blue" as const,
         period: "morning" as const,
-        start: parseTimeToday(data.blue_hour_morning_start),
-        end: parseTimeToday(data.blue_hour_morning_end),
-        timeRange: `${data.blue_hour_morning_start} - ${data.blue_hour_morning_end}`,
+        start: parseISOTime(data.blue_hour_morning_start),
+        end: parseISOTime(data.blue_hour_morning_end),
         message: "静寂な青い時間が訪れます",
       },
       {
         type: "magic" as const,
         period: "morning" as const,
-        start: parseTimeToday(data.golden_hour_morning_start),
-        end: parseTimeToday(data.golden_hour_morning_end),
-        timeRange: `${data.golden_hour_morning_start} - ${data.golden_hour_morning_end}`,
+        start: parseISOTime(data.golden_hour_morning_start),
+        end: parseISOTime(data.golden_hour_morning_end),
         message: "黄金色の朝が始まります",
       },
       {
         type: "magic" as const,
         period: "evening" as const,
-        start: parseTimeToday(data.golden_hour_evening_start),
-        end: parseTimeToday(data.golden_hour_evening_end),
-        timeRange: `${data.golden_hour_evening_start} - ${data.golden_hour_evening_end}`,
+        start: parseISOTime(data.golden_hour_evening_start),
+        end: parseISOTime(data.golden_hour_evening_end),
         message: "美しい夕暮れが期待できそうです",
       },
       {
         type: "blue" as const,
         period: "evening" as const,
-        start: parseTimeToday(data.blue_hour_evening_start),
-        end: parseTimeToday(data.blue_hour_evening_end),
-        timeRange: `${data.blue_hour_evening_start} - ${data.blue_hour_evening_end}`,
+        start: parseISOTime(data.blue_hour_evening_start),
+        end: parseISOTime(data.blue_hour_evening_end),
         message: "静寂な青い時間をお楽しみください",
       },
     ];
 
-    // 現在進行中かチェック
     for (const moment of moments) {
       if (now >= moment.start && now <= moment.end) {
         return {
           type: moment.type,
-          time: moment.start.toLocaleTimeString("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          timeRange: moment.timeRange,
+          time: formatTime(moment.start),
+          timeRange: `${formatTime(moment.start)} - ${formatTime(moment.end)}`,
           period: moment.period,
-          visibility: "excellent",
           message: "今です！空を見上げてみてください",
           isHappening: true,
+          visibility: "excellent",
         };
       }
     }
 
-    // 次の時間を探す
     for (const moment of moments) {
       if (now < moment.start) {
         const minutesUntil = Math.floor(
@@ -180,35 +169,29 @@ const NewSkyleApp = () => {
 
         return {
           type: moment.type,
-          time: moment.start.toLocaleTimeString("ja-JP", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          timeRange: moment.timeRange,
+          time: formatTime(moment.start),
+          timeRange: `${formatTime(moment.start)} - ${formatTime(moment.end)}`,
           period: moment.period,
-          visibility: "excellent",
           message: `${timeMessage} ${moment.message}`,
           isHappening: false,
+          visibility: "excellent",
         };
       }
     }
 
-    // 明日の朝
     return {
       type: "blue",
-      time: moments[0].start.toLocaleTimeString("ja-JP", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      timeRange: moments[0].timeRange,
+      time: formatTime(moments[0].start),
+      timeRange: `${formatTime(moments[0].start)} - ${formatTime(
+        moments[0].end
+      )}`,
       period: "morning",
-      visibility: "excellent",
       message: "明日の朝、静寂な青い時間が訪れます",
       isHappening: false,
+      visibility: "excellent",
     };
   };
 
-  // 位置情報取得
   const getLocation = () => {
     setLoading(true);
     setError(null);
@@ -227,14 +210,12 @@ const NewSkyleApp = () => {
       },
       (error) => {
         console.error("位置情報取得エラー:", error);
-        setError("位置情報の取得に失敗しました");
-        setLoading(false);
+        setError("位置情報の取得に失敗しました。大阪のデータを表示します。");
         fetchSolarData(34.6937, 135.5023);
       }
     );
   };
 
-  // APIからデータ取得
   const fetchSolarData = async (lat: number, lng: number) => {
     try {
       const response = await fetch(
@@ -252,10 +233,13 @@ const NewSkyleApp = () => {
       console.log("次の美しい時間:", next);
 
       setNextMoment(next);
+      setError(null);
       setLoading(false);
     } catch (err) {
       console.error("API呼び出しエラー:", err);
-      setError("データの取得に失敗しました");
+      setError(
+        "バックエンドに接続できません。サーバーが起動しているか確認してください。"
+      );
       setLoading(false);
     }
   };
@@ -317,24 +301,17 @@ const NewSkyleApp = () => {
               </Typography>
               <Typography
                 variant="body2"
-                sx={{
-                  color: "#64748b",
-                  fontWeight: 300,
-                }}
+                sx={{ color: "#64748b", fontWeight: 300 }}
               >
                 空に余白と彩りを
               </Typography>
             </Box>
-
             <IconButton
               onClick={handleClick}
               sx={{
                 backgroundColor: "white",
                 boxShadow: 2,
-                "&:hover": {
-                  backgroundColor: "white",
-                  boxShadow: 4,
-                },
+                "&:hover": { backgroundColor: "white", boxShadow: 4 },
               }}
             >
               {open ? <Close /> : <MenuIcon />}
@@ -367,9 +344,7 @@ const NewSkyleApp = () => {
                     borderRadius: 3,
                     px: 3,
                     py: 1.5,
-                    "&:hover": {
-                      backgroundColor: "rgba(37, 99, 235, 0.9)",
-                    },
+                    "&:hover": { backgroundColor: "rgba(37, 99, 235, 0.9)" },
                   }}
                 >
                   現在地の空を見る
@@ -379,7 +354,7 @@ const NewSkyleApp = () => {
                     variant="caption"
                     sx={{ display: "block", mt: 1, color: "#64748b" }}
                   >
-                    📍 緯度: {location.lat.toFixed(4)}, 経度:{" "}
+                    緯度: {location.lat.toFixed(4)}, 経度:{" "}
                     {location.lng.toFixed(4)}
                   </Typography>
                 )}
@@ -410,12 +385,11 @@ const NewSkyleApp = () => {
 
               {!loading && nextMoment && (
                 <Box sx={{ textAlign: "center", width: "100%" }}>
-                  <ImageIcon
+                  <MomentIcon
                     type={nextMoment.type}
                     visibility={nextMoment.visibility}
                     size={140}
                   />
-
                   <Card
                     elevation={8}
                     sx={{
@@ -429,27 +403,18 @@ const NewSkyleApp = () => {
                     <CardContent sx={{ p: 5 }}>
                       <Typography
                         variant="h5"
-                        sx={{
-                          fontWeight: 500,
-                          color: "#1e293b",
-                          mb: 1,
-                        }}
+                        sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}
                       >
                         {nextMoment.isHappening ? "今です！" : "次の美しい時間"}
                       </Typography>
-
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: "#64748b",
-                          mb: 3,
-                        }}
+                        sx={{ color: "#64748b", mb: 3 }}
                       >
                         {nextMoment.type === "magic"
                           ? "マジックアワー"
                           : "ブルーモーメント"}
                       </Typography>
-
                       <Typography
                         variant="h1"
                         sx={{
@@ -461,23 +426,15 @@ const NewSkyleApp = () => {
                       >
                         {nextMoment.time}
                       </Typography>
-
                       <Typography
                         variant="body2"
-                        sx={{
-                          color: "#94a3b8",
-                          mb: 3,
-                        }}
+                        sx={{ color: "#94a3b8", mb: 3 }}
                       >
                         {nextMoment.timeRange}
                       </Typography>
-
                       <Typography
                         variant="body1"
-                        sx={{
-                          color: "#475569",
-                          lineHeight: 1.8,
-                        }}
+                        sx={{ color: "#475569", lineHeight: 1.8 }}
                       >
                         {nextMoment.message}
                       </Typography>
@@ -501,30 +458,19 @@ const NewSkyleApp = () => {
               <CardContent sx={{ p: 4, textAlign: "center" }}>
                 <Typography
                   variant="h4"
-                  sx={{
-                    fontWeight: 500,
-                    color: "#1e293b",
-                    mb: 3,
-                  }}
+                  sx={{ fontWeight: 500, color: "#1e293b", mb: 3 }}
                 >
                   Skyleについて
                 </Typography>
                 <Typography
                   variant="body1"
-                  sx={{
-                    color: "#475569",
-                    lineHeight: 1.8,
-                    mb: 2,
-                  }}
+                  sx={{ color: "#475569", lineHeight: 1.8, mb: 2 }}
                 >
                   日常に小さな余白と彩りを添える、空の美しい時間をお知らせするアプリです。
                 </Typography>
                 <Typography
                   variant="body1"
-                  sx={{
-                    color: "#475569",
-                    lineHeight: 1.8,
-                  }}
+                  sx={{ color: "#475569", lineHeight: 1.8 }}
                 >
                   マジックアワーとブルーモーメントの時刻を確認して、空の特別な瞬間を楽しんでください。
                 </Typography>
@@ -573,4 +519,4 @@ const NewSkyleApp = () => {
   );
 };
 
-export default NewSkyleApp;
+export default SkyleApp;
