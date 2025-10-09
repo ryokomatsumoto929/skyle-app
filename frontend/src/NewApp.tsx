@@ -11,7 +11,6 @@ import {
   CircularProgress,
   Button,
   Paper,
-  Chip,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -450,66 +449,79 @@ const SkyleApp = () => {
                   <MomentIcon
                     type={nextMoment.type}
                     visibility={nextMoment.visibility}
-                    size={140}
+                    size={160}
                   />
+
                   <Card
-                    elevation={8}
+                    elevation={0}
                     sx={{
-                      borderRadius: 4,
-                      backgroundColor: "rgba(255, 255, 255, 0.9)",
-                      backdropFilter: "blur(10px)",
-                      maxWidth: 400,
+                      borderRadius: 5,
+                      backgroundColor: "rgba(255, 255, 255, 0.6)",
+                      backdropFilter: "blur(20px)",
+                      border: "1px solid rgba(255, 255, 255, 0.8)",
+                      maxWidth: 420,
                       mx: "auto",
+                      overflow: "visible",
                     }}
                   >
-                    <CardContent sx={{ p: 5 }}>
+                    <CardContent sx={{ p: 6 }}>
                       <Typography
-                        variant="h5"
-                        sx={{ fontWeight: 500, color: "#1e293b", mb: 1 }}
-                      >
-                        {nextMoment.isHappening ? "今です！" : "次の美しい時間"}
-                      </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ color: "#64748b", mb: 3 }}
+                        variant="overline"
+                        sx={{
+                          fontWeight: 400,
+                          color: "#94a3b8",
+                          letterSpacing: "0.15em",
+                          fontSize: "0.7rem",
+                          mb: 0.5,
+                        }}
                       >
                         {nextMoment.type === "magic"
-                          ? "マジックアワー"
-                          : "ブルーモーメント"}
+                          ? "Magic Hour"
+                          : "Blue Moment"}
                       </Typography>
+
                       <Typography
                         variant="h1"
                         sx={{
-                          fontWeight: 100,
+                          fontWeight: 200,
                           color: "#0f172a",
-                          mb: 2,
-                          letterSpacing: "-0.02em",
+                          mb: 1,
+                          letterSpacing: "-0.03em",
+                          fontSize: "5rem",
                         }}
                       >
                         {nextMoment.time}
                       </Typography>
+
                       <Typography
                         variant="body2"
-                        sx={{ color: "#94a3b8", mb: 3 }}
+                        sx={{
+                          color: "#cbd5e1",
+                          mb: 4,
+                          fontWeight: 300,
+                          letterSpacing: "0.05em",
+                        }}
                       >
                         {nextMoment.timeRange}
                       </Typography>
 
-                      {/* 天気による可視性メッセージ */}
+                      {/* 天気情報 - ミニマル版 */}
                       <Box
                         sx={{
-                          backgroundColor: "rgba(59, 130, 246, 0.05)",
-                          borderRadius: 2,
-                          p: 2,
-                          mb: 3,
+                          mb: 4,
+                          py: 3,
+                          borderTop: "1px solid rgba(203, 213, 225, 0.3)",
+                          borderBottom: "1px solid rgba(203, 213, 225, 0.3)",
                         }}
                       >
                         <Typography
                           variant="body2"
                           sx={{
-                            color: "#475569",
-                            fontWeight: 500,
-                            mb: 1,
+                            color: "#64748b",
+                            fontSize: "0.9rem",
+                            mb: 2,
+                            fontWeight: 400,
+                            lineHeight: 1.6,
                           }}
                         >
                           {weatherData.visibility}
@@ -517,28 +529,51 @@ const SkyleApp = () => {
                         <Box
                           sx={{
                             display: "flex",
-                            gap: 1,
+                            gap: 3,
                             justifyContent: "center",
-                            flexWrap: "wrap",
+                            alignItems: "center",
                           }}
                         >
-                          <Chip
-                            icon={<Cloud />}
-                            label={`雲量 ${weatherData.clouds}%`}
-                            size="small"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
-                          <Chip
-                            label={weatherData.description}
-                            size="small"
-                            sx={{ fontSize: "0.75rem" }}
-                          />
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                            }}
+                          >
+                            <Cloud sx={{ fontSize: 16, color: "#94a3b8" }} />
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "#94a3b8",
+                                fontSize: "0.8rem",
+                                fontWeight: 300,
+                              }}
+                            >
+                              {weatherData.clouds}%
+                            </Typography>
+                          </Box>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "#94a3b8",
+                              fontSize: "0.8rem",
+                              fontWeight: 300,
+                            }}
+                          >
+                            {weatherData.description}
+                          </Typography>
                         </Box>
                       </Box>
 
                       <Typography
                         variant="body1"
-                        sx={{ color: "#475569", lineHeight: 1.8 }}
+                        sx={{
+                          color: "#64748b",
+                          lineHeight: 1.9,
+                          fontWeight: 300,
+                          fontSize: "0.95rem",
+                        }}
                       >
                         {nextMoment.message}
                       </Typography>
