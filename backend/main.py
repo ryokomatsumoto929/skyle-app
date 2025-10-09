@@ -8,6 +8,9 @@ import pytz
 from astral import LocationInfo
 from astral.sun import sun
 
+# 可視性判定モジュールをインポート
+from utils.visibility import get_simple_visibility_message, get_detailed_visibility
+
 # 環境変数読み込み
 load_dotenv()
 
@@ -104,13 +107,16 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
         
         weather_data = response.json()
         
+        # 改善された可視性判定を使用
+        visibility_message = get_simple_visibility_message(weather_data)
+        
         # 天気データを抽出
         weather = {
             "description": weather_data["weather"][0]["description"],
             "clouds": weather_data["clouds"]["all"],
             "humidity": weather_data["main"]["humidity"],
             "temperature": weather_data["main"]["temp"],
-            "visibility": get_visibility_message(weather_data)
+            "visibility": visibility_message
         }
         
         # 太陽時刻を計算
@@ -140,6 +146,47 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
         print(f"💥 エラー: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/api/visibility-detail")
+def get_visibility_detail(lat: float = 35.6762, lng: float = 139.6503):
+    """詳細な可視性情報（デバッグ用）"""
+    try:
+        api_key = os.getenv("OPENWEATHER_API_KEY")
+        
+        if not api_key:
+            raise HTTPException(status_code=500, detail="APIキーが設定されていません")
+        
+        weather_url = "https://api.openweathermap.org/data/2.5/weather"
+        params = {
+            "lat": lat,
+            "lon": lng,
+            "appid": api_key,
+            "units": "metric",
+            "lang": "ja"
+        }
+        
+        response = requests.get(weather_url, params=params)
+        
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail="天気APIエラー")
+        
+        weather_data = response.json()
+        
+        # 詳細な可視性情報を取得
+        visibility_info = get_detailed_visibility(weather_data)
+        
+        return {
+            "visibility": visibility_info,
+            "raw_weather": {
+                "description": weather_data["weather"][0]["description"],
+                "clouds": weather_data["clouds"]["all"],
+                "humidity": weather_data["main"]["humidity"],
+                "temperature": weather_data["main"]["temp"]
+            }
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 def get_test_forecast_for_menu(lat: float = 35.6762, lng: float = 139.6503):
     """テストデータ（APIキーがない場合）"""
     weather = {
@@ -163,17 +210,6 @@ def get_test_forecast_for_menu(lat: float = 35.6762, lng: float = 139.6503):
         "location": {"lat": lat, "lng": lng},
         "timestamp": datetime.now().isoformat()
     }
-
-def get_visibility_message(weather_data):
-    """シンプルな可視性判定"""
-    cloud_cover = weather_data["clouds"]["all"]
-    
-    if cloud_cover < 30:
-        return "快晴すぎて控えめな色合いかも"
-    elif cloud_cover < 70:
-        return "美しい時間が期待できそうです"
-    else:
-        return "雲が多く、見るのは難しそう..."
 
 @app.get("/api/health")
 async def health_check():

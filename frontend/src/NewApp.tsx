@@ -11,6 +11,7 @@ import {
   CircularProgress,
   Button,
   Paper,
+  Chip,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -18,6 +19,7 @@ import {
   Camera,
   Info,
   LocationOn,
+  Cloud,
 } from "@mui/icons-material";
 
 interface NextMoment {
@@ -41,6 +43,26 @@ interface SolarData {
   blue_hour_morning_end: string;
   blue_hour_evening_start: string;
   blue_hour_evening_end: string;
+}
+
+interface WeatherData {
+  description: string;
+  clouds: number;
+  humidity: number;
+  temperature: number;
+  visibility: string;
+}
+
+interface ForecastResponse {
+  weather: WeatherData;
+  solarTimes: {
+    sunrise: string;
+    sunset: string;
+    goldenHour: string;
+    blueHour: string;
+  };
+  location: { lat: number; lng: number };
+  timestamp: string;
 }
 
 const MomentIcon: React.FC<{
@@ -83,6 +105,7 @@ const SkyleApp = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [currentPage, setCurrentPage] = useState("home");
   const [nextMoment, setNextMoment] = useState<NextMoment | null>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
@@ -102,7 +125,26 @@ const SkyleApp = () => {
     });
   };
 
-  const findNextMoment = (data: SolarData): NextMoment => {
+  const getVisibilityLevel = (
+    message: string
+  ): "excellent" | "good" | "fair" | "poor" => {
+    if (message.includes("絶好")) return "excellent";
+    if (message.includes("美しい") || message.includes("期待"))
+      return "excellent";
+    if (message.includes("綺麗")) return "good";
+    if (
+      message.includes("隙間") ||
+      message.includes("微妙") ||
+      message.includes("チャンス")
+    )
+      return "fair";
+    return "poor";
+  };
+
+  const findNextMoment = (
+    data: SolarData,
+    visibility: "excellent" | "good" | "fair" | "poor"
+  ): NextMoment => {
     const now = new Date();
 
     const moments = [
@@ -145,7 +187,7 @@ const SkyleApp = () => {
           period: moment.period,
           message: "今です！空を見上げてみてください",
           isHappening: true,
-          visibility: "excellent",
+          visibility: visibility,
         };
       }
     }
@@ -174,7 +216,7 @@ const SkyleApp = () => {
           period: moment.period,
           message: `${timeMessage} ${moment.message}`,
           isHappening: false,
-          visibility: "excellent",
+          visibility: visibility,
         };
       }
     }
@@ -188,7 +230,7 @@ const SkyleApp = () => {
       period: "morning",
       message: "明日の朝、静寂な青い時間が訪れます",
       isHappening: false,
-      visibility: "excellent",
+      visibility: visibility,
     };
   };
 
@@ -206,30 +248,50 @@ const SkyleApp = () => {
       (position) => {
         const { latitude, longitude } = position.coords;
         setLocation({ lat: latitude, lng: longitude });
-        fetchSolarData(latitude, longitude);
+        fetchForecastData(latitude, longitude);
       },
       (error) => {
         console.error("位置情報取得エラー:", error);
         setError("位置情報の取得に失敗しました。大阪のデータを表示します。");
-        fetchSolarData(34.6937, 135.5023);
+        fetchForecastData(34.6937, 135.5023);
       }
     );
   };
 
-  const fetchSolarData = async (lat: number, lng: number) => {
+  const fetchForecastData = async (lat: number, lng: number) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/solar/times?lat=${lat}&lng=${lng}`
+        `http://localhost:3001/api/today-forecast?lat=${lat}&lng=${lng}`
       );
 
       if (!response.ok) {
         throw new Error("データの取得に失敗しました");
       }
 
-      const data: SolarData = await response.json();
+      const data: ForecastResponse = await response.json();
       console.log("取得したデータ:", data);
 
-      const next = findNextMoment(data);
+      // 天気データを保存
+      setWeatherData(data.weather);
+
+      // 可視性レベルを判定
+      const visibilityLevel = getVisibilityLevel(data.weather.visibility);
+
+      // 太陽時刻データを旧形式に変換
+      const solarData: SolarData = {
+        sunrise: data.solarTimes.sunrise,
+        sunset: data.solarTimes.sunset,
+        golden_hour_morning_start: data.solarTimes.sunrise,
+        golden_hour_morning_end: data.solarTimes.sunrise,
+        golden_hour_evening_start: data.solarTimes.sunset,
+        golden_hour_evening_end: data.solarTimes.goldenHour,
+        blue_hour_morning_start: data.solarTimes.sunrise,
+        blue_hour_morning_end: data.solarTimes.sunrise,
+        blue_hour_evening_start: data.solarTimes.blueHour,
+        blue_hour_evening_end: data.solarTimes.blueHour,
+      };
+
+      const next = findNextMoment(solarData, visibilityLevel);
       console.log("次の美しい時間:", next);
 
       setNextMoment(next);
@@ -245,7 +307,7 @@ const SkyleApp = () => {
   };
 
   useEffect(() => {
-    fetchSolarData(34.6937, 135.5023);
+    fetchForecastData(34.6937, 135.5023);
   }, []);
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -383,7 +445,7 @@ const SkyleApp = () => {
                 </Card>
               )}
 
-              {!loading && nextMoment && (
+              {!loading && nextMoment && weatherData && (
                 <Box sx={{ textAlign: "center", width: "100%" }}>
                   <MomentIcon
                     type={nextMoment.type}
@@ -432,6 +494,48 @@ const SkyleApp = () => {
                       >
                         {nextMoment.timeRange}
                       </Typography>
+
+                      {/* 天気による可視性メッセージ */}
+                      <Box
+                        sx={{
+                          backgroundColor: "rgba(59, 130, 246, 0.05)",
+                          borderRadius: 2,
+                          p: 2,
+                          mb: 3,
+                        }}
+                      >
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#475569",
+                            fontWeight: 500,
+                            mb: 1,
+                          }}
+                        >
+                          {weatherData.visibility}
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 1,
+                            justifyContent: "center",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <Chip
+                            icon={<Cloud />}
+                            label={`雲量 ${weatherData.clouds}%`}
+                            size="small"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                          <Chip
+                            label={weatherData.description}
+                            size="small"
+                            sx={{ fontSize: "0.75rem" }}
+                          />
+                        </Box>
+                      </Box>
+
                       <Typography
                         variant="body1"
                         sx={{ color: "#475569", lineHeight: 1.8 }}
