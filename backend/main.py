@@ -10,7 +10,10 @@ from astral.sun import sun
 
 # 可視性判定モジュールをインポート
 from utils.visibility import get_simple_visibility_message, get_detailed_visibility
-
+from utils.visibility import (
+    calculate_visibility_score,
+    calculate_halo_visibility  # この行を追加
+)
 # 環境変数読み込み
 load_dotenv()
 
@@ -107,8 +110,11 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
         
         weather_data = response.json()
         
-        # 改善された可視性判定を使用
-        visibility_message = get_simple_visibility_message(weather_data)
+        # 可視性判定（マジックアワー・ブルーモーメント用）
+        visibility_result = calculate_visibility_score(weather_data)
+        
+        # ハロ可視性判定を追加
+        halo_visibility = calculate_halo_visibility(weather_data)
         
         # 天気データを抽出
         weather = {
@@ -116,7 +122,7 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
             "clouds": weather_data["clouds"]["all"],
             "humidity": weather_data["main"]["humidity"],
             "temperature": weather_data["main"]["temp"],
-            "visibility": visibility_message
+            "visibility": visibility_result["message"]  # メッセージを使用
         }
         
         # 太陽時刻を計算
@@ -135,6 +141,8 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
         return {
             "weather": weather,
             "solarTimes": solar_times,
+            "visibility": visibility_result,      # 詳細な可視性情報を追加
+            "haloVisibility": halo_visibility,    # ハロ可視性情報を追加
             "location": {"lat": lat, "lng": lng},
             "timestamp": datetime.now().isoformat()
         }
@@ -145,7 +153,6 @@ def get_today_forecast(lat: float = 35.6762, lng: float = 139.6503):
     except Exception as e:
         print(f"💥 エラー: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
-
 @app.get("/api/visibility-detail")
 def get_visibility_detail(lat: float = 35.6762, lng: float = 139.6503):
     """詳細な可視性情報（デバッグ用）"""
@@ -204,12 +211,41 @@ def get_test_forecast_for_menu(lat: float = 35.6762, lng: float = 139.6503):
         "blueHour": "2025-10-02T18:30:00+09:00"
     }
     
+    # テスト用の可視性データを追加
+    test_visibility = {
+        "score": 70,
+        "level": "good",
+        "message": "綺麗な空が見られるかもしれません",
+        "factors": {
+            "雲量": "45%",
+            "雲量判定": "良好",
+            "湿度": "65%",
+            "湿度判定": "理想的"
+        }
+    }
+    
+    # テスト用のハロ可視性データを追加
+    test_halo = {
+        "score": 65,
+        "level": "good",
+        "message": "👌 ハロが見えるかもしれません",
+        "factors": {
+            "雲量": "45% ✓ 高層雲に期待",
+            "湿度": "65% ✓ 氷晶形成に適した条件",
+            "視程": "10.0km ✓ クリア",
+            "天気": "薄曇り ✓ ハロに最適"
+        }
+    }
+    
     return {
         "weather": weather,
         "solarTimes": solar_times,
+        "visibility": test_visibility,      # 追加
+        "haloVisibility": test_halo,        # 追加
         "location": {"lat": lat, "lng": lng},
         "timestamp": datetime.now().isoformat()
     }
+    
 
 @app.get("/api/health")
 async def health_check():
@@ -223,3 +259,4 @@ async def health_check():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=3001)
+   

@@ -142,3 +142,82 @@ def get_detailed_visibility(weather_data: dict) -> dict:
     詳細な可視性情報を返す（デバッグ用）
     """
     return calculate_visibility_score(weather_data)
+def calculate_halo_visibility(weather_data: dict) -> dict:
+    """
+    ハロ（光環）現象の可視性を判定
+    
+    条件:
+    - 高層雲（巻雲・巻層雲）の存在
+    - 適度な湿度（上層の氷晶）
+    - 太陽が見える程度の雲量
+    """
+    score = 0
+    factors = {}
+    
+    # データ構造に対応した取得方法に修正
+    clouds = weather_data.get('clouds', {}).get('all', 0)  # 修正
+    humidity = weather_data.get('main', {}).get('humidity', 0)  # 修正
+    visibility_m = weather_data.get('visibility', 10000)
+    weather_main = weather_data.get('weather', [{}])[0].get('main', '')
+    
+    # 雲量チェック（30-70%が理想）
+    if 30 <= clouds <= 70:
+        score += 35
+        factors['雲量'] = f'{clouds}% ✓ 高層雲に期待'
+    elif clouds < 30:
+        score += 10
+        factors['雲量'] = f'{clouds}% - 雲が少ない'
+    else:
+        score += 15
+        factors['雲量'] = f'{clouds}% - やや多い'
+    
+    # 湿度チェック（氷晶形成）
+    if 40 <= humidity <= 80:
+        score += 30
+        factors['湿度'] = f'{humidity}% ✓ 氷晶形成に適した条件'
+    else:
+        score += 10
+        factors['湿度'] = f'{humidity}%'
+    
+    # 視程チェック（クリアな大気）
+    if visibility_m >= 8000:
+        score += 25
+        factors['視程'] = f'{visibility_m/1000:.1f}km ✓ クリア'
+    elif visibility_m >= 5000:
+        score += 15
+        factors['視程'] = f'{visibility_m/1000:.1f}km'
+    else:
+        score += 5
+        factors['視程'] = f'{visibility_m/1000:.1f}km - 視界不良'
+    
+    # 天気条件ボーナス
+    if weather_main in ['Clouds']:
+        score += 10
+        factors['天気'] = '薄曇り ✓ ハロに最適'
+    elif weather_main in ['Clear']:
+        score -= 10
+        factors['天気'] = '快晴 - 雲が必要'
+    elif weather_main in ['Rain', 'Snow']:
+        score -= 20
+        factors['天気'] = '降水中 - 難しい'
+    
+    # 可視性レベル判定
+    if score >= 80:
+        level = 'excellent'
+        message = '✨ ハロが見える絶好の条件です'
+    elif score >= 60:
+        level = 'good'
+        message = '👌 ハロが見えるかもしれません'
+    elif score >= 40:
+        level = 'fair'
+        message = '🤔 ハロは難しいかも...'
+    else:
+        level = 'poor'
+        message = '😔 今日のハロは期待薄です'
+    
+    return {
+        'score': score,
+        'level': level,
+        'message': message,
+        'factors': factors
+    }

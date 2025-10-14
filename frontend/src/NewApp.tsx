@@ -22,7 +22,7 @@ import {
 } from "@mui/icons-material";
 
 interface NextMoment {
-  type: "magic" | "blue";
+  type: "magic" | "blue" | "halo"; // "halo"を追加
   time: string;
   timeRange: string;
   period: "morning" | "evening";
@@ -50,8 +50,14 @@ interface WeatherData {
   humidity: number;
   temperature: number;
   visibility: string;
+  haloVisibility?: {
+    // 追加
+    score: number;
+    level: string;
+    message: string;
+    factors: Record<string, string>;
+  };
 }
-
 interface ForecastResponse {
   weather: WeatherData;
   solarTimes: {
@@ -60,21 +66,46 @@ interface ForecastResponse {
     goldenHour: string;
     blueHour: string;
   };
+  visibility: {
+    // 追加
+    score: number;
+    level: string;
+    message: string;
+    factors: Record<string, string>;
+  };
+  haloVisibility: {
+    // 追加
+    score: number;
+    level: string;
+    message: string;
+    factors: Record<string, string>;
+  };
   location: { lat: number; lng: number };
   timestamp: string;
 }
 
 const MomentIcon: React.FC<{
-  type: "magic" | "blue";
+  type: "magic" | "blue" | "halo";
   visibility: "excellent" | "good" | "fair" | "poor";
   size?: number;
 }> = ({ type, visibility, size = 140 }) => {
   const getImageSrc = () => {
+    // fair は poor として扱う（3段階のアイコンのみ用意されているため）
+    const imageVisibility = visibility === "fair" ? "poor" : visibility;
+
     if (type === "magic") {
-      return `/images/magic-hour-${visibility}.jpg`;
-    } else {
-      return `/images/blue-moment-${visibility}.jpg`;
+      return `/images/magic-hour-${imageVisibility}.jpg`;
+    } else if (type === "blue") {
+      return `/images/blue-moment-${imageVisibility}.jpg`;
+    } else if (type === "halo") {
+      return `/images/halo-${imageVisibility}.jpg`;
     }
+  };
+
+  const getAltText = () => {
+    if (type === "magic") return "マジックアワー";
+    if (type === "blue") return "ブルーモーメント";
+    return "ハロ";
   };
 
   return (
@@ -82,7 +113,7 @@ const MomentIcon: React.FC<{
       <Box
         component="img"
         src={getImageSrc()}
-        alt={type === "magic" ? "マジックアワー" : "ブルーモーメント"}
+        alt={getAltText()}
         sx={{
           width: size,
           height: size,
@@ -91,9 +122,14 @@ const MomentIcon: React.FC<{
           objectFit: "cover",
         }}
         onError={(e) => {
-          e.currentTarget.src = `/images/${
-            type === "magic" ? "magic-hour" : "blue-moment"
-          }-good.jpg`;
+          // エラー時のフォールバック - good画像を使用
+          if (type === "halo") {
+            e.currentTarget.src = `/images/halo-good.jpg`;
+          } else {
+            e.currentTarget.src = `/images/${
+              type === "magic" ? "magic-hour" : "blue-moment"
+            }-good.jpg`;
+          }
         }}
       />
     </Box>
@@ -271,7 +307,10 @@ const SkyleApp = () => {
       console.log("取得したデータ:", data);
 
       // 天気データを保存
-      setWeatherData(data.weather);
+      setWeatherData({
+        ...data.weather,
+        haloVisibility: data.haloVisibility,
+      });
 
       // 可視性レベルを判定
       const visibilityLevel = getVisibilityLevel(data.weather.visibility);
@@ -579,6 +618,71 @@ const SkyleApp = () => {
                       </Typography>
                     </CardContent>
                   </Card>
+                  {/* ハロ予報カード */}
+                  {weatherData?.haloVisibility && (
+                    <Card
+                      elevation={0}
+                      sx={{
+                        borderRadius: 4,
+                        backgroundColor: "rgba(255, 255, 255, 0.6)",
+                        backdropFilter: "blur(20px)",
+                        border: "1px solid rgba(255, 255, 255, 0.8)",
+                        maxWidth: 420,
+                        mx: "auto",
+                        mt: 3,
+                        overflow: "visible",
+                      }}
+                    >
+                      <CardContent sx={{ p: 4, textAlign: "center" }}>
+                        {/* MomentIconを使わず直接img要素で表示 */}
+                        <Box
+                          component="img"
+                          src={`/images/halo-${
+                            weatherData.haloVisibility.level === "fair"
+                              ? "poor"
+                              : weatherData.haloVisibility.level
+                          }.jpg`}
+                          alt="ハロ"
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            borderRadius: 2,
+                            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                            objectFit: "cover",
+                            mx: "auto",
+                            display: "block",
+                            mb: 2,
+                          }}
+                          onError={(e: any) => {
+                            e.currentTarget.src = `/images/halo-good.jpg`;
+                          }}
+                        />
+                        <Typography
+                          variant="overline"
+                          sx={{
+                            fontWeight: 400,
+                            color: "#94a3b8",
+                            letterSpacing: "0.15em",
+                            fontSize: "0.7rem",
+                            display: "block",
+                            mb: 1,
+                          }}
+                        >
+                          Halo Forecast
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "#64748b",
+                            fontSize: "0.9rem",
+                            fontWeight: 300,
+                          }}
+                        >
+                          {weatherData.haloVisibility.message}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  )}
                 </Box>
               )}
             </>
