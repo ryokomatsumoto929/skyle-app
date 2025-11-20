@@ -8,7 +8,6 @@ import {
   Menu,
   MenuItem,
   Container,
-  CircularProgress,
   Button,
   Paper,
 } from "@mui/material";
@@ -22,7 +21,7 @@ import {
 } from "@mui/icons-material";
 
 interface NextMoment {
-  type: "magic" | "blue" | "halo"; // "halo"を追加
+  type: "magic" | "blue" | "halo";
   time: string;
   timeRange: string;
   period: "morning" | "evening";
@@ -51,13 +50,13 @@ interface WeatherData {
   temperature: number;
   visibility: string;
   haloVisibility?: {
-    // 追加
     score: number;
     level: string;
     message: string;
     factors: Record<string, string>;
   };
 }
+
 interface ForecastResponse {
   weather: WeatherData;
   solarTimes: {
@@ -67,14 +66,12 @@ interface ForecastResponse {
     blueHour: string;
   };
   visibility: {
-    // 追加
     score: number;
     level: string;
     message: string;
     factors: Record<string, string>;
   };
   haloVisibility: {
-    // 追加
     score: number;
     level: string;
     message: string;
@@ -90,7 +87,6 @@ const MomentIcon: React.FC<{
   size?: number;
 }> = ({ type, visibility, size = 140 }) => {
   const getImageSrc = () => {
-    // fair は poor として扱う（3段階のアイコンのみ用意されているため）
     const imageVisibility = visibility === "fair" ? "poor" : visibility;
 
     if (type === "magic") {
@@ -109,7 +105,9 @@ const MomentIcon: React.FC<{
   };
 
   return (
-    <Box sx={{ display: "flex", justifyContent: "center", mb: 4 }}>
+    <Box
+      sx={{ display: "flex", justifyContent: "center", mb: { xs: 2, sm: 4 } }}
+    >
       <Box
         component="img"
         src={getImageSrc()}
@@ -122,7 +120,6 @@ const MomentIcon: React.FC<{
           objectFit: "cover",
         }}
         onError={(e) => {
-          // エラー時のフォールバック - good画像を使用
           if (type === "halo") {
             e.currentTarget.src = `/images/halo-good.jpg`;
           } else {
@@ -306,16 +303,13 @@ const SkyleApp = () => {
       const data: ForecastResponse = await response.json();
       console.log("取得したデータ:", data);
 
-      // 天気データを保存
       setWeatherData({
         ...data.weather,
         haloVisibility: data.haloVisibility,
       });
 
-      // 可視性レベルを判定
       const visibilityLevel = getVisibilityLevel(data.weather.visibility);
 
-      // 太陽時刻データを旧形式に変換
       const solarData: SolarData = {
         sunrise: data.solarTimes.sunrise,
         sunset: data.solarTimes.sunset,
@@ -534,7 +528,7 @@ const SkyleApp = () => {
                   <MomentIcon
                     type={nextMoment.type}
                     visibility={nextMoment.visibility}
-                    size={160}
+                    size={120}
                   />
 
                   <Card
@@ -544,12 +538,12 @@ const SkyleApp = () => {
                       backgroundColor: "rgba(255, 255, 255, 0.6)",
                       backdropFilter: "blur(20px)",
                       border: "1px solid rgba(255, 255, 255, 0.8)",
-                      maxWidth: 420,
+                      width: "calc(100% - 32px)",
                       mx: "auto",
                       overflow: "visible",
                     }}
                   >
-                    <CardContent sx={{ p: 6 }}>
+                    <CardContent sx={{ p: { xs: 3, sm: 6 } }}>
                       <Typography
                         variant="overline"
                         sx={{
@@ -572,7 +566,7 @@ const SkyleApp = () => {
                           color: "#0f172a",
                           mb: 1,
                           letterSpacing: "-0.03em",
-                          fontSize: "5rem",
+                          fontSize: { xs: "3.5rem", sm: "5rem" },
                         }}
                       >
                         {nextMoment.time}
@@ -582,7 +576,7 @@ const SkyleApp = () => {
                         variant="body2"
                         sx={{
                           color: "#cbd5e1",
-                          mb: 4,
+                          mb: { xs: 2, sm: 4 },
                           fontWeight: 300,
                           letterSpacing: "0.05em",
                         }}
@@ -590,11 +584,10 @@ const SkyleApp = () => {
                         {nextMoment.timeRange}
                       </Typography>
 
-                      {/* 天気情報 - ミニマル版 */}
                       <Box
                         sx={{
-                          mb: 4,
-                          py: 3,
+                          mb: { xs: 2, sm: 4 },
+                          py: { xs: 2, sm: 3 },
                           borderTop: "1px solid rgba(203, 213, 225, 0.3)",
                           borderBottom: "1px solid rgba(203, 213, 225, 0.3)",
                         }}
@@ -662,73 +655,67 @@ const SkyleApp = () => {
                       >
                         {nextMoment.message}
                       </Typography>
+
+                      {weatherData?.haloVisibility && (
+                        <Box
+                          sx={{
+                            mt: 3,
+                            pt: 3,
+                            borderTop: "1px solid rgba(203, 213, 225, 0.2)",
+                            display: "flex",
+                            flexDirection: "column",
+                            alignItems: "center",
+                            gap: 1.5,
+                          }}
+                        >
+                          <Box
+                            component="img"
+                            src={`/images/halo-${
+                              weatherData.haloVisibility.level === "fair"
+                                ? "poor"
+                                : weatherData.haloVisibility.level
+                            }.jpg`}
+                            alt="ハロ"
+                            sx={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 1.5,
+                              boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                              objectFit: "cover",
+                            }}
+                            onError={(e: any) => {
+                              e.currentTarget.src = `/images/halo-good.jpg`;
+                            }}
+                          />
+                          <Box sx={{ textAlign: "center" }}>
+                            <Typography
+                              variant="overline"
+                              sx={{
+                                fontWeight: 400,
+                                color: "#94a3b8",
+                                letterSpacing: "0.15em",
+                                fontSize: "0.65rem",
+                                display: "block",
+                                mb: 0.5,
+                              }}
+                            >
+                              Halo Forecast
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color: "#64748b",
+                                fontSize: "0.85rem",
+                                fontWeight: 300,
+                              }}
+                            >
+                              {weatherData.haloVisibility.message}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )}
                     </CardContent>
                   </Card>
-                  {/* ハロ予報カード */}
-                  {weatherData?.haloVisibility && (
-                    <Card
-                      elevation={0}
-                      sx={{
-                        borderRadius: 4,
-                        backgroundColor: "rgba(255, 255, 255, 0.6)",
-                        backdropFilter: "blur(20px)",
-                        border: "1px solid rgba(255, 255, 255, 0.8)",
-                        maxWidth: 420,
-                        mx: "auto",
-                        mt: 3,
-                        overflow: "visible",
-                      }}
-                    >
-                      <CardContent sx={{ p: 4, textAlign: "center" }}>
-                        {/* MomentIconを使わず直接img要素で表示 */}
-                        <Box
-                          component="img"
-                          src={`/images/halo-${
-                            weatherData.haloVisibility.level === "fair"
-                              ? "poor"
-                              : weatherData.haloVisibility.level
-                          }.jpg`}
-                          alt="ハロ"
-                          sx={{
-                            width: 80,
-                            height: 80,
-                            borderRadius: 2,
-                            boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-                            objectFit: "cover",
-                            mx: "auto",
-                            display: "block",
-                            mb: 2,
-                          }}
-                          onError={(e: any) => {
-                            e.currentTarget.src = `/images/halo-good.jpg`;
-                          }}
-                        />
-                        <Typography
-                          variant="overline"
-                          sx={{
-                            fontWeight: 400,
-                            color: "#94a3b8",
-                            letterSpacing: "0.15em",
-                            fontSize: "0.7rem",
-                            display: "block",
-                            mb: 1,
-                          }}
-                        >
-                          Halo Forecast
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: "#64748b",
-                            fontSize: "0.9rem",
-                            fontWeight: 300,
-                          }}
-                        >
-                          {weatherData.haloVisibility.message}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  )}
                 </Box>
               )}
             </>
