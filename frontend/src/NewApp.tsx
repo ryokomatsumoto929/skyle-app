@@ -444,7 +444,17 @@ const SkyleApp = () => {
                     borderRadius: 3,
                     px: 3,
                     py: 1.5,
-                    "&:hover": { backgroundColor: "rgba(37, 99, 235, 0.9)" },
+                    boxShadow: "0 4px 12px rgba(59, 130, 246, 0.3)",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      backgroundColor: "rgba(37, 99, 235, 0.9)",
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 6px 20px rgba(59, 130, 246, 0.4)",
+                    },
+                    "&:active": {
+                      transform: "translateY(0)",
+                      boxShadow: "0 2px 8px rgba(59, 130, 246, 0.3)",
+                    },
                   }}
                 >
                   現在地の空を見る
@@ -461,10 +471,30 @@ const SkyleApp = () => {
               </Box>
 
               {loading && (
-                <Box sx={{ textAlign: "center", py: 8 }}>
-                  <CircularProgress />
-                  <Typography sx={{ mt: 2, color: "#64748b" }}>
-                    データを取得中...
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    py: 8,
+                    animation: "pulse 2s ease-in-out infinite",
+                    "@keyframes pulse": {
+                      "0%, 100%": {
+                        opacity: 0.4,
+                      },
+                      "50%": {
+                        opacity: 1,
+                      },
+                    },
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      color: "#94a3b8",
+                      fontWeight: 300,
+                      fontSize: "0.9rem",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    空の様子を確認しています...
                   </Typography>
                 </Box>
               )}
@@ -484,7 +514,23 @@ const SkyleApp = () => {
               )}
 
               {!loading && nextMoment && weatherData && (
-                <Box sx={{ textAlign: "center", width: "100%" }}>
+                <Box
+                  sx={{
+                    textAlign: "center",
+                    width: "100%",
+                    animation: "fadeSlideUp 0.7s ease-out",
+                    "@keyframes fadeSlideUp": {
+                      from: {
+                        opacity: 0,
+                        transform: "translateY(8px)",
+                      },
+                      to: {
+                        opacity: 1,
+                        transform: "translateY(0)",
+                      },
+                    },
+                  }}
+                >
                   <MomentIcon
                     type={nextMoment.type}
                     visibility={nextMoment.visibility}
