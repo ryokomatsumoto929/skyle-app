@@ -1,0 +1,17 @@
+# Database Configuration
+DB_USER=skyle_user
+DB_PASSWORD=skyle_password
+DB_NAME=skyle_db
+DB_HOST=localhost
+DB_PORT=5433
+
+# pgAdmin Configuration (開発環境のみ)
+PGADMIN_EMAIL=admin@skyle.local
+PGADMIN_PASSWORD=admin
+
+# Application Configuration
+NODE_ENV=development
+PORT=3000
+
+# OpenWeatherMap API
+OPENWEATHER_API_KEY=6952de0858b7098b348b034e593ab6a4

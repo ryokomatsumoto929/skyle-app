@@ -20,6 +20,8 @@ import {
   Cloud,
 } from "@mui/icons-material";
 
+type TimePeriod = "earlyMorning" | "morning" | "daytime" | "evening" | "night";
+
 interface NextMoment {
   type: "magic" | "blue" | "halo";
   time: string;
@@ -81,11 +83,40 @@ interface ForecastResponse {
   timestamp: string;
 }
 
+// 時間帯別グラデーション定義（全て淡く控えめなトーン）
+const TIME_GRADIENTS: Record<TimePeriod, string> = {
+  earlyMorning: "linear-gradient(to bottom, #dbeafe 0%, #bfdbfe 30%, #a5b4fc 60%, #c4b5fd 100%)",
+  morning: "linear-gradient(to bottom, #fed7aa 0%, #fdba74 30%, #fb923c 60%, #fbbf24 100%)",
+  daytime: "linear-gradient(to bottom, #eff6ff 0%, #dbeafe 30%, #bfdbfe 60%, #93c5fd 100%)",
+  evening: "linear-gradient(to bottom, #fecaca 0%, #fca5a5 30%, #fb923c 60%, #fde047 100%)",
+  night: "linear-gradient(to bottom, #cbd5e1 0%, #94a3b8 30%, #64748b 60%, #475569 100%)"
+};
+
+// 現在の時間帯を判定する関数
+const getCurrentTimePeriod = (): TimePeriod => {
+  const now = new Date();
+  const hour = now.getHours();
+
+  if (hour >= 4 && hour < 6) {
+    return "earlyMorning";
+  } else if (hour >= 6 && hour < 9) {
+    return "morning";
+  } else if (hour >= 9 && hour < 16) {
+    return "daytime";
+  } else if (hour >= 16 && hour < 18) {
+    return "evening";
+  } else {
+    return "night";
+  }
+};
+
 const MomentIcon: React.FC<{
   type: "magic" | "blue" | "halo";
   visibility: "excellent" | "good" | "fair" | "poor";
   size?: number;
 }> = ({ type, visibility, size = 140 }) => {
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+
   const getImageSrc = () => {
     const imageVisibility = visibility === "fair" ? "poor" : visibility;
 
@@ -112,12 +143,15 @@ const MomentIcon: React.FC<{
         component="img"
         src={getImageSrc()}
         alt={getAltText()}
+        onLoad={() => setImageLoaded(true)}
         sx={{
           width: size,
           height: size,
           borderRadius: 3,
           boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
           objectFit: "cover",
+          opacity: imageLoaded ? 1 : 0,
+          transition: "opacity 0.3s ease-in",
         }}
         onError={(e) => {
           if (type === "halo") {
@@ -143,8 +177,47 @@ const SkyleApp = () => {
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
     null
   );
+  const [currentGradient, setCurrentGradient] = useState<string>(
+    TIME_GRADIENTS[getCurrentTimePeriod()]
+  );
+  const [demoMode, setDemoMode] = useState<TimePeriod | null>(null);
 
   const open = Boolean(anchorEl);
+
+  // 画像のプリロード
+  useEffect(() => {
+    const imagesToPreload = [
+      '/images/magic-hour-excellent.jpg',
+      '/images/magic-hour-good.jpg',
+      '/images/magic-hour-poor.jpg',
+      '/images/blue-moment-excellent.jpg',
+      '/images/blue-moment-good.jpg',
+      '/images/blue-moment-poor.jpg',
+      '/images/halo-excellent.jpg',
+      '/images/halo-good.jpg',
+      '/images/halo-poor.jpg',
+    ];
+
+    imagesToPreload.forEach((src) => {
+      const img = new Image();
+      img.src = src;
+    });
+  }, []);
+
+  // 時間帯に応じて背景グラデーションを更新
+  useEffect(() => {
+    const updateGradient = () => {
+      const period = demoMode || getCurrentTimePeriod();
+      setCurrentGradient(TIME_GRADIENTS[period]);
+    };
+
+    updateGradient();
+    
+    if (!demoMode) {
+      const interval = setInterval(updateGradient, 60000); // 1分ごとに更新
+      return () => clearInterval(interval);
+    }
+  }, [demoMode]);
 
   const parseISOTime = (isoStr: string): Date => {
     return new Date(isoStr);
@@ -359,8 +432,9 @@ const SkyleApp = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: "linear-gradient(135deg, #f8fafc 0%, #e0f2fe 100%)",
+        background: currentGradient,
         py: 3,
+        transition: "background 2s ease-in-out",
       }}
     >
       <Paper
@@ -399,6 +473,20 @@ const SkyleApp = () => {
               >
                 空に余白と彩りを
               </Typography>
+              {demoMode && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    display: "block",
+                    mt: 1,
+                    color: "#3b82f6",
+                    fontWeight: 500,
+                    fontSize: "0.7rem",
+                  }}
+                >
+                  プレビューモード
+                </Typography>
+              )}
             </Box>
             <IconButton
               onClick={handleClick}
@@ -790,6 +878,76 @@ const SkyleApp = () => {
             このアプリについて
           </Typography>
         </MenuItem>
+        <Box sx={{ borderTop: "1px solid rgba(203, 213, 225, 0.3)", my: 1 }} />
+        <Box sx={{ px: 2, py: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{ color: "#94a3b8", fontWeight: 600, fontSize: "0.7rem" }}
+          >
+            時間帯プレビュー
+          </Typography>
+        </Box>
+        <MenuItem
+          onClick={() => {
+            setDemoMode("earlyMorning");
+            handleClose();
+          }}
+          sx={{ py: 1, px: 2, fontSize: "0.9rem" }}
+        >
+          🌌 早朝 (4-6時)
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDemoMode("morning");
+            handleClose();
+          }}
+          sx={{ py: 1, px: 2, fontSize: "0.9rem" }}
+        >
+          🌅 朝 (6-9時)
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDemoMode("daytime");
+            handleClose();
+          }}
+          sx={{ py: 1, px: 2, fontSize: "0.9rem" }}
+        >
+          ☀️ 昼 (9-16時)
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDemoMode("evening");
+            handleClose();
+          }}
+          sx={{ py: 1, px: 2, fontSize: "0.9rem" }}
+        >
+          🌆 夕方 (16-18時)
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            setDemoMode("night");
+            handleClose();
+          }}
+          sx={{ py: 1, px: 2, fontSize: "0.9rem" }}
+        >
+          🌙 夜 (18-4時)
+        </MenuItem>
+        {demoMode && (
+          <MenuItem
+            onClick={() => {
+              setDemoMode(null);
+              handleClose();
+            }}
+            sx={{
+              py: 1,
+              px: 2,
+              fontSize: "0.9rem",
+              backgroundColor: "rgba(59, 130, 246, 0.1)",
+            }}
+          >
+            ↻ 現在時刻に戻る
+          </MenuItem>
+        )}
       </Menu>
     </Box>
   );

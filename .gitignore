@@ -1,72 +1,9 @@
-# ===== 環境変数・機密情報 =====
-.env
-.env.*
-!.env.example
-
-# ===== Python仮想環境（確実に除外） =====
-venv/
-*/venv/
-**/venv/
-env/
-*/env/
-**/env/
-.venv/
-*/.venv/
-**/.venv/
-ENV/
-*/ENV/
-**/ENV/
-
-# ===== Python関連 =====
-__pycache__/
-*/__pycache__/
-**/__pycache__/
-*.py[cod]
-*$py.class
-*.so
-*.egg
-*.egg-info/
-build/
-dist/
-.Python
-
-# ===== Node.js関連 =====
-node_modules/
-*/node_modules/
 **/node_modules/
-npm-debug.log*
-yarn-debug.log*
-.npm
-package-lock.json
-
-# ===== React/Vite関連 =====
-dist/
-.cache/
-.parcel-cache/
-
-# ===== エディタ・IDE =====
-.vscode/
-.idea/
+**/__pycache__/
+**/*.pyc
+.env
+**/.env
+frontend/dist/
+backend/venv/
 .DS_Store
-*.swp
-*.swo
-
-# ===== ログ・一時ファイル =====
 *.log
-logs/
-*.tmp
-*.temp
-
-# ===== バックアップ =====
-archive/
-backup/
-*.backup
-
-# ===== データベース =====
-*.db
-*.sqlite
-*.sqlite3
-
-# ===== OS関連 =====
-Thumbs.db
-Desktop.ini
