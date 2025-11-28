@@ -1,4 +1,4 @@
-import { TimePeriod, NextMoment, SolarData } from "../types";
+import type { TimePeriod, NextMoment, SolarData } from "../types";
 
 // 現在の時間帯を判定する関数
 export const getCurrentTimePeriod = (): TimePeriod => {

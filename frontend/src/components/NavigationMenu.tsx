@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Menu, MenuItem, Typography } from "@mui/material";
 import { Camera, Info } from "@mui/icons-material";
-import { TimePeriod } from "../types";
+import type { TimePeriod } from "../types";
 
 interface NavigationMenuProps {
   anchorEl: HTMLElement | null;

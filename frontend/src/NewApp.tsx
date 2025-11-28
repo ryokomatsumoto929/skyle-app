@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Box, Card, CardContent, Container, Typography } from "@mui/material";
 
 // Types
-import {
+import type {
   NextMoment,
   WeatherData,
   ForecastResponse,

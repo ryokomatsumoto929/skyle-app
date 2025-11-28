@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Card, CardContent, Typography } from "@mui/material";
 import { Cloud } from "@mui/icons-material";
-import { NextMoment, WeatherData } from "../types";
+import type { NextMoment, WeatherData } from "../types";
 import { MomentIcon } from "./MomentIcon";
 
 interface MomentCardProps {

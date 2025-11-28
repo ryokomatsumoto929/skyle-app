@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { TimePeriod } from "../types";
+import type { TimePeriod } from "../types";
 import { TIME_GRADIENTS } from "../constants/gradients";
 import { getCurrentTimePeriod } from "../utils/timeUtils";
 
@@ -11,13 +11,15 @@ export const useTimeGradient = (demoMode: TimePeriod | null) => {
   useEffect(() => {
     const updateGradient = () => {
       const period = demoMode || getCurrentTimePeriod();
+      console.log("現在の時間帯:", period);
+      console.log("適用されるグラデーション:", TIME_GRADIENTS[period]);
       setCurrentGradient(TIME_GRADIENTS[period]);
     };
 
     updateGradient();
 
     if (!demoMode) {
-      const interval = setInterval(updateGradient, 60000); // 1分ごとに更新
+      const interval = setInterval(updateGradient, 60000);
       return () => clearInterval(interval);
     }
   }, [demoMode]);

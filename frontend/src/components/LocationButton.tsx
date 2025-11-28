@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { LocationOn } from "@mui/icons-material";
-import { Location } from "../types";
+import type { Location } from "../types";
 
 interface LocationButtonProps {
   loading: boolean;
