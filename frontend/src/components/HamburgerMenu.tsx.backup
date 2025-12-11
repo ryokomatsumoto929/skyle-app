@@ -155,6 +155,38 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     }
   };
 
+  const getIconPath = (type: string, visibility: string): string => {
+    switch (type) {
+      case "magic-hour":
+        switch (visibility) {
+          case "excellent":
+            return "/images/magic-hour-excellent.jpg";
+          case "good":
+            return "/images/magic-hour-good.jpg";
+          default:
+            return "/images/magic-hour-poor.jpg";
+        }
+      case "blue-moment":
+        switch (visibility) {
+          case "excellent":
+            return "/images/blue-moment-excellent.jpg";
+          case "good":
+            return "/images/blue-moment-good.jpg";
+          default:
+            return "/images/blue-moment-poor.jpg";
+        }
+      case "halo":
+        switch (visibility) {
+          case "excellent":
+            return "/images/halo-excellent.jpg";
+          case "good":
+            return "/images/halo-good.jpg";
+          default:
+            return "/images/halo-poor.jpg";
+        }
+      default:
+        return "/images/magic-hour-good.jpg";
+    }
   };
   // コンポーネントマウント時にデータ取得
   useEffect(() => {

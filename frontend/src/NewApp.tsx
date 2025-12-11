@@ -23,7 +23,7 @@ import { useTimeGradient } from "./hooks/useTimeGradient";
 
 // Utils
 import { getVisibilityLevel, findNextMoment } from "./utils/timeUtils";
-
+import { InstallPrompt } from "./components/InstallPrompt";
 // Constants
 import { IMAGES_TO_PRELOAD } from "./constants/gradients";
 
@@ -151,11 +151,7 @@ const SkyleApp = () => {
         transition: "background 2s ease-in-out",
       }}
     >
-      <Header
-        open={open}
-        demoMode={!!demoMode}
-        onMenuClick={handleClick}
-      />
+      <Header open={open} demoMode={!!demoMode} onMenuClick={handleClick} />
 
       <Container maxWidth="xs">
         <Box
@@ -236,6 +232,7 @@ const SkyleApp = () => {
         onPageChange={handlePageChange}
         onTimePeriodChange={handleTimePeriodChange}
       />
+      <InstallPrompt />
     </Box>
   );
 };
