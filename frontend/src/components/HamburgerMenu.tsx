@@ -175,9 +175,8 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
     setIsMenuOpen(false);
   };
-
   // 時刻フォーマット
-  const formatTime = (timeString: string | undefined): string => {
+  formatTime = (timeString: string | undefined): string => {
     if (!timeString) return "--:--";
     try {
       return new Date(timeString).toLocaleTimeString("ja-JP", {
