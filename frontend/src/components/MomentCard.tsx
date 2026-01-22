@@ -34,7 +34,7 @@ export const MomentCard: React.FC<MomentCardProps> = ({
       <MomentIcon
         type={nextMoment.type}
         visibility={nextMoment.visibility}
-        size={120}
+        size={80}
       />
 
       <Card
@@ -49,7 +49,7 @@ export const MomentCard: React.FC<MomentCardProps> = ({
           overflow: "visible",
         }}
       >
-        <CardContent sx={{ p: { xs: 3, sm: 6 } }}>
+        <CardContent sx={{ p: { xs: 2, sm: 4 } }}>
           <Typography
             variant="overline"
             sx={{
@@ -70,7 +70,7 @@ export const MomentCard: React.FC<MomentCardProps> = ({
               color: "#0f172a",
               mb: 1,
               letterSpacing: "-0.03em",
-              fontSize: { xs: "3.5rem", sm: "5rem" },
+              fontSize: { xs: "2.5rem", sm: "3.5rem" },
             }}
           >
             {nextMoment.time}
