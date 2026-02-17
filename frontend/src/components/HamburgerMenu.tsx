@@ -155,7 +155,6 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
     }
   };
 
-  };
   // コンポーネントマウント時にデータ取得
   useEffect(() => {
     fetchTodayForecast();
@@ -175,8 +174,9 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({
 
     setIsMenuOpen(false);
   };
+
   // 時刻フォーマット
-  formatTime = (timeString: string | undefined): string => {
+  const formatTime = (timeString: string | undefined): string => {
     if (!timeString) return "--:--";
     try {
       return new Date(timeString).toLocaleTimeString("ja-JP", {

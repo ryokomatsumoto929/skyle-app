@@ -17,16 +17,60 @@ import { LocationButton } from "./components/LocationButton";
 import { MomentCard } from "./components/MomentCard";
 import { NavigationMenu } from "./components/NavigationMenu";
 import { AboutPage } from "./components/AboutPage";
+import MoodShape from "./components/MoodShape";
+import { InstallPrompt } from "./components/InstallPrompt";
 
 // Hooks
 import { useTimeGradient } from "./hooks/useTimeGradient";
 
 // Utils
 import { getVisibilityLevel, findNextMoment } from "./utils/timeUtils";
-import { InstallPrompt } from "./components/InstallPrompt";
+
 // Constants
 import { IMAGES_TO_PRELOAD } from "./constants/gradients";
 
+// ============================================
+// Page Dot Navigator (上部配置)
+// ============================================
+interface PageDotsProps {
+  pages: string[];
+  current: string;
+  onChange: (page: string) => void;
+}
+
+const PageDots: React.FC<PageDotsProps> = ({ pages, current, onChange }) => (
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+      gap: 10,
+      marginTop: 16,
+      marginBottom: 8,
+    }}
+  >
+    {pages.map((page) => (
+      <button
+        key={page}
+        onClick={() => onChange(page)}
+        aria-label={page}
+        style={{
+          width: current === page ? 8 : 6,
+          height: current === page ? 8 : 6,
+          borderRadius: "50%",
+          border: "none",
+          background: current === page ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.12)",
+          cursor: "pointer",
+          padding: 0,
+          transition: "all 0.3s ease",
+        }}
+      />
+    ))}
+  </div>
+);
+
+// ============================================
+// Main App
+// ============================================
 const SkyleApp = () => {
   // State
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -40,6 +84,9 @@ const SkyleApp = () => {
 
   const open = Boolean(anchorEl);
   const currentGradient = useTimeGradient(demoMode);
+
+  // メインページ一覧（about はメニューからのみ）
+  const mainPages = ["home", "mood"];
 
   // 画像のプリロード
   useEffect(() => {
@@ -70,7 +117,7 @@ const SkyleApp = () => {
         console.error("位置情報取得エラー:", error);
         setError("位置情報の取得に失敗しました。大阪のデータを表示します。");
         fetchForecastData(34.6937, 135.5023);
-      }
+      },
     );
   };
 
@@ -78,7 +125,7 @@ const SkyleApp = () => {
   const fetchForecastData = async (lat: number, lng: number) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/api/today-forecast?lat=${lat}&lng=${lng}`
+        `http://localhost:3001/api/today-forecast?lat=${lat}&lng=${lng}`,
       );
 
       if (!response.ok) {
@@ -114,7 +161,7 @@ const SkyleApp = () => {
     } catch (err) {
       console.error("API呼び出しエラー:", err);
       setError(
-        "バックエンドに接続できません。サーバーが起動しているか確認してください。"
+        "バックエンドに接続できません。サーバーが起動しているか確認してください。",
       );
       setLoading(false);
     }
@@ -144,14 +191,26 @@ const SkyleApp = () => {
 
   return (
     <Box
-      sx={{
-        minHeight: "100vh",
-        background: currentGradient,
-        py: 3,
-        transition: "background 2s ease-in-out",
-      }}
+      sx={
+        {
+          minHeight: "100vh",
+          background: currentGradient,
+          py: 3,
+          transition: "background 2s ease-in-out",
+          "--skyle-bg": currentGradient,
+        } as React.CSSProperties
+      }
     >
       <Header open={open} demoMode={!!demoMode} onMenuClick={handleClick} />
+
+      {/* ページ切り替えドット（aboutページ以外で表示） */}
+      {currentPage !== "about" && (
+        <PageDots
+          pages={mainPages}
+          current={currentPage}
+          onChange={handlePageChange}
+        />
+      )}
 
       <Container maxWidth="xs">
         <Box
@@ -163,6 +222,7 @@ const SkyleApp = () => {
             justifyContent: "center",
           }}
         >
+          {/* ===== 空の予報ページ ===== */}
           {currentPage === "home" && (
             <>
               <LocationButton
@@ -178,12 +238,8 @@ const SkyleApp = () => {
                     py: 8,
                     animation: "pulse 2s ease-in-out infinite",
                     "@keyframes pulse": {
-                      "0%, 100%": {
-                        opacity: 0.4,
-                      },
-                      "50%": {
-                        opacity: 1,
-                      },
+                      "0%, 100%": { opacity: 0.4 },
+                      "50%": { opacity: 1 },
                     },
                   }}
                 >
@@ -220,6 +276,10 @@ const SkyleApp = () => {
             </>
           )}
 
+          {/* ===== 気持ちの記録ページ ===== */}
+          {currentPage === "mood" && <MoodShape />}
+
+          {/* ===== Aboutページ ===== */}
           {currentPage === "about" && <AboutPage />}
         </Box>
       </Container>
